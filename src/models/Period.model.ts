@@ -27,19 +27,19 @@ export type PeriodStatus = "draft" | "active" | "closed";
 class Period extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare id: number;
 
   @ForeignKey(() => Organization)
   @AllowNull(false)
   @Index("idx_periods_org")
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare organizationId: number;
 
   @ForeignKey(() => Test)
   @AllowNull(false)
   @Index("idx_periods_test")
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare testId: number;
 
   @AllowNull(false)

@@ -26,18 +26,18 @@ import Question from "./Question.model.ts";
 class Answer extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare id: number;
 
   @ForeignKey(() => Attempt)
   @AllowNull(false)
   @Index("idx_answers_attempt")
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare attemptId: number;
 
   @ForeignKey(() => Question)
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare questionId: number;
 
   @AllowNull(false)

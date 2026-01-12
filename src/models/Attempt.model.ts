@@ -21,19 +21,19 @@ export type AttemptStatus = "in_progress" | "finished";
 class Attempt extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare id: number;
 
   @ForeignKey(() => User)
   @AllowNull(false)
   @Index("idx_attempts_user")
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare userId: number;
 
   @ForeignKey(() => Test)
   @AllowNull(false)
   @Index("idx_attempts_test")
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare testId: number;
 
   @Default("in_progress")
@@ -43,7 +43,7 @@ class Attempt extends Model {
 
   @Default(0)
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare answeredCount: number;
 
   @Column(DataType.DATE)
@@ -52,7 +52,7 @@ class Attempt extends Model {
   @Index("idx_attempts_period")
   @ForeignKey(() => Period)
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare periodId: number;
 
   @BelongsTo(() => Period, { foreignKey: "periodId", as: "period" })

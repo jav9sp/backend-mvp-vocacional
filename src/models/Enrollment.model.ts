@@ -31,17 +31,17 @@ export type EnrollmentStatus = "invited" | "active" | "completed" | "removed";
 class Enrollment extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare id: number;
 
   @ForeignKey(() => Period)
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare periodId: number;
 
   @ForeignKey(() => User)
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare studentUserId: number;
 
   @Default("active")

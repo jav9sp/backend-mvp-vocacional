@@ -25,17 +25,17 @@ import Test from "./Test.model.ts";
 class Question extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare id: number;
 
   @ForeignKey(() => Test)
   @AllowNull(false)
   @Index("idx_questions_test")
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare testId: number;
 
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare externalId: number;
 
   @AllowNull(false)
@@ -51,7 +51,7 @@ class Question extends Model {
   declare dim: string[];
 
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare orderIndex: number;
 }
 

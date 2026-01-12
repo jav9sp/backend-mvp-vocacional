@@ -22,12 +22,12 @@ export type UserRole = "admin" | "student";
 class User extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare id: number;
 
   @ForeignKey(() => Organization)
   @AllowNull(false)
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare organizationId: number;
 
   @Unique

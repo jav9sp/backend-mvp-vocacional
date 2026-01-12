@@ -22,14 +22,14 @@ import Attempt from "./Attempt.model.ts";
 class Result extends Model {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare id: number;
 
   @ForeignKey(() => Attempt)
   @Unique
   @AllowNull(false)
   @Index("idx_results_attempt")
-  @Column(DataType.INTEGER.UNSIGNED)
+  @Column(DataType.INTEGER)
   declare attemptId: number;
 
   @AllowNull(false)

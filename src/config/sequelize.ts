@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize-typescript";
 import dotenv from "dotenv";
+import colors from "colors";
 import User from "../models/User.model.ts";
 import Test from "../models/Test.model.ts";
 import Question from "../models/Question.model.ts";
@@ -12,13 +13,8 @@ import Enrollment from "../models/Enrollment.model.ts";
 
 dotenv.config();
 
-export const sequelize = new Sequelize({
-  dialect: "mysql",
-  host: process.env.MYSQL_HOST,
-  port: Number(process.env.MYSQL_PORT || 3306),
-  database: process.env.MYSQL_DATABASE,
-  username: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
+export const sequelize = new Sequelize(process.env.POSTGRES_URL, {
+  dialect: "postgres",
   models: [
     User,
     Test,
@@ -34,7 +30,12 @@ export const sequelize = new Sequelize({
 });
 
 export async function connectDB() {
-  await sequelize.authenticate();
-  await sequelize.sync();
-  console.log("Conectado a la base de datos");
+  try {
+    await sequelize.authenticate();
+    await sequelize.sync();
+    console.log("Conectado a la base de datos");
+  } catch (error) {
+    console.log(error);
+    console.log(colors.bgRed("Error al conectar a la base de datos"));
+  }
 }
