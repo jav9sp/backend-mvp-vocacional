@@ -7,7 +7,7 @@ import Answer from "../models/Answer.model.ts";
 import Question from "../models/Question.model.ts";
 import Result from "../models/Result.model.ts";
 
-import { INAPV_AREAS } from "../data/inapv-areas.ts";
+import { INAPV_AREAS } from "../data/inapv.data.ts";
 import { computeInapvScores } from "../services/scoring.service.ts";
 import { SaveAnswersBodySchema } from "../validators/attempts.schemas.ts";
 import Test from "../models/Test.model.ts";

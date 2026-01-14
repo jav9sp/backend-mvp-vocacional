@@ -95,7 +95,7 @@ export async function listMyActiveEnrollments(
           name: period.name,
           status: period.status,
           startAt: period.startAt,
-          endAt: period.endAt,
+          endAt: period.endAt ?? null,
         },
         test: test
           ? {
@@ -110,7 +110,7 @@ export async function listMyActiveEnrollments(
               id: attempt.id,
               status: attempt.status,
               answeredCount: attempt.answeredCount,
-              finishedAt: attempt.finishedAt,
+              finishedAt: attempt.finishedAt ?? null,
             }
           : null,
       };

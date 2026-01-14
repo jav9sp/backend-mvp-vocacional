@@ -87,7 +87,7 @@ export async function adminListStudents(req: Request, res: Response) {
         where: { userId: { [Op.in]: studentIds }, status: "finished" },
         attributes: [
           "userId",
-          [fn("COUNT", literal("DISTINCT periodId")), "cnt"],
+          [fn("COUNT", fn("DISTINCT", col("periodId"))), "cnt"],
         ],
         group: ["userId"],
         raw: true,
@@ -401,7 +401,7 @@ export async function adminGetStudentDetail(
       return {
         enrollmentId: e.id,
         enrollmentStatus: e.status,
-        course: getCourseFromMeta(e.meta),
+        course: getCourseFromMeta(e.meta) ?? null,
         derivedStatus: deriveStatus(a),
         createdAt: e.createdAt,
         period: {

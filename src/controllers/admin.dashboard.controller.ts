@@ -47,7 +47,7 @@ export async function adminGetDashboard(req: Request, res: Response) {
         where: { periodId: { [Op.in]: periodIds }, status: "finished" },
         attributes: [
           "periodId",
-          [fn("COUNT", literal("DISTINCT userId")), "finishedCount"],
+          [fn("COUNT", fn("DISTINCT", col("userId"))), "finishedCount"],
         ],
         group: ["periodId"],
         raw: true,
