@@ -148,15 +148,33 @@ export async function adminCreatePeriod(req: Request, res: Response) {
   });
 }
 
-export async function adminUpdatePeriod(req: Request, res: Response) {
-  const orgId = req.auth?.organizationId;
-  if (!orgId) return res.status(401).json({ ok: false, error: "Unauthorized" });
-
-  const paramsParsed = PeriodIdParamsSchema.safeParse(req.params);
-  if (!paramsParsed.success) {
-    return res.status(400).json({ ok: false, error: "Invalid periodId" });
+export async function adminGetPeriodById(req: Request, res: Response) {
+  const { period } = req;
+  if (!period) {
+    return res.status(500).json({ message: "Period not loaded" });
   }
-  const { periodId } = paramsParsed.data;
+
+  return res.json({
+    ok: true,
+    period: {
+      id: period.id,
+      name: period.name,
+      status: period.status,
+      startAt: period.startAt,
+      endAt: period.endAt,
+      testId: period.testId,
+      organizationId: period.organizationId,
+      createdAt: period.createdAt,
+      updatedAt: period.updatedAt,
+    },
+  });
+}
+
+export async function adminUpdatePeriod(req: Request, res: Response) {
+  const { period } = req;
+  if (!period) {
+    return res.status(500).json({ message: "Period not loaded" });
+  }
 
   const bodyParsed = UpdatePeriodSchema.safeParse(req.body);
   if (!bodyParsed.success) {
@@ -165,13 +183,6 @@ export async function adminUpdatePeriod(req: Request, res: Response) {
       error: "Invalid body",
       issues: bodyParsed.error.issues,
     });
-  }
-
-  const period = await Period.findByPk(periodId);
-  if (!period) return res.status(404).json({ ok: false, error: "Not found" });
-
-  if (period.organizationId !== orgId) {
-    return res.status(403).json({ ok: false, error: "Forbidden" });
   }
 
   const patch = bodyParsed.data;
@@ -209,6 +220,7 @@ export async function adminUpdatePeriod(req: Request, res: Response) {
       (from === "draft" && to === "active") ||
       (from === "active" && to === "closed") ||
       (from === "draft" && to === "closed") || // por si quieres cerrarlo sin usarlo
+      (from === "closed" && to === "active") || // añadido de "closed" a "active"
       from === to;
 
     if (!allowed) {

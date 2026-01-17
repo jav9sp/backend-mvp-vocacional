@@ -7,10 +7,6 @@ import Attempt from "../models/Attempt.model.ts";
 import Result from "../models/Result.model.ts";
 import { areaName } from "../utils/inapv-areas.ts";
 
-const ParamsSchema = z.object({
-  periodId: z.coerce.number().int().positive(),
-});
-
 function csvEscape(v: any) {
   const s = (v ?? "").toString();
   // escapa comillas y envuelve si hay coma o salto
@@ -19,18 +15,13 @@ function csvEscape(v: any) {
 }
 
 export async function adminExportPeriodCSV(req: Request, res: Response) {
-  const parsed = ParamsSchema.safeParse(req.params);
-  if (!parsed.success)
-    return res.status(400).json({ ok: false, error: "Invalid periodId" });
-
-  const { periodId } = parsed.data;
-
-  const period = await Period.findByPk(periodId);
-  if (!period)
-    return res.status(404).json({ ok: false, error: "Period not found" });
+  const { period } = req;
+  if (!period) {
+    return res.status(500).json({ message: "Period not loaded" });
+  }
 
   const enrollments = await Enrollment.findAll({
-    where: { periodId },
+    where: { id: period.id },
     order: [["createdAt", "ASC"]],
   });
 
@@ -42,7 +33,6 @@ export async function adminExportPeriodCSV(req: Request, res: Response) {
   });
   const studentById = new Map(students.map((s) => [s.id, s]));
 
-  // mismo enfoque temporal que el admin list: attempt por userId+testId
   const attempts = await Attempt.findAll({
     where: { userId: studentIds, testId: period.testId },
     attributes: [
@@ -63,7 +53,7 @@ export async function adminExportPeriodCSV(req: Request, res: Response) {
   }
 
   const attemptIds = Array.from(latestAttemptByUserId.values()).map(
-    (a) => a.id
+    (a) => a.id,
   );
   const results = attemptIds.length
     ? await Result.findAll({

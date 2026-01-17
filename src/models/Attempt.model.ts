@@ -60,6 +60,9 @@ class Attempt extends Model {
 
   @BelongsTo(() => User, { foreignKey: "userId", as: "user" })
   declare user?: User;
+
+  @BelongsTo(() => Test, { foreignKey: "testId", as: "test" })
+  declare test?: Test;
 }
 
 export default Attempt;

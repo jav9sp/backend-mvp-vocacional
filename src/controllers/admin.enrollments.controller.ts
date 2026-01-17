@@ -1,30 +1,17 @@
 import { Request, Response } from "express";
-import { z } from "zod";
 import Enrollment from "../models/Enrollment.model.ts";
-import Period from "../models/Period.model.ts";
 import User from "../models/User.model.ts";
 import Attempt from "../models/Attempt.model.ts";
 import Result from "../models/Result.model.ts";
 
-const ParamsSchema = z.object({
-  periodId: z.coerce.number().int().positive(),
-});
-
 export async function adminListEnrollments(req: Request, res: Response) {
-  const parsed = ParamsSchema.safeParse(req.params);
-  if (!parsed.success)
-    return res.status(400).json({ ok: false, error: "Invalid periodId" });
+  const { period } = req;
+  if (!period) {
+    return res.status(500).json({ message: "Period not loaded" });
+  }
 
-  const { periodId } = parsed.data;
-
-  // Asegura que el periodo exista
-  const period = await Period.findByPk(periodId);
-  if (!period)
-    return res.status(404).json({ ok: false, error: "Period not found" });
-
-  // MVP single-org: no filtramos por org. Luego: validar req.adminOrgId === period.organizationId
   const enrollments = await Enrollment.findAll({
-    where: { periodId },
+    where: { id: period.id },
     order: [["createdAt", "ASC"]],
   });
 
@@ -36,9 +23,6 @@ export async function adminListEnrollments(req: Request, res: Response) {
   });
   const studentById = new Map(students.map((s) => [s.id, s]));
 
-  // OJO: como aún no migramos Attempt->enrollmentId, aquí intentamos inferir:
-  // - busco el attempt más reciente del student para el test del periodo (p.testId)
-  // Esto lo arreglamos definitivamente cuando cambiemos Attempt a enrollmentId.
   const attempts = await Attempt.findAll({
     where: { userId: studentIds, testId: period.testId },
     attributes: [
@@ -61,7 +45,7 @@ export async function adminListEnrollments(req: Request, res: Response) {
 
   // Buscar results para esos attempts
   const attemptIds = Array.from(latestAttemptByUserId.values()).map(
-    (a) => a.id
+    (a) => a.id,
   );
   const results = attemptIds.length
     ? await Result.findAll({

@@ -6,12 +6,13 @@ import { renderPeriodReportHtml } from "../templates/period-report.template.ts";
 const ParamsSchema = z.object({ periodId: z.coerce.number().int().positive() });
 
 export async function adminGetPeriodReportPdf(req: Request, res: Response) {
-  const parsed = ParamsSchema.safeParse(req.params);
-  if (!parsed.success)
-    return res.status(400).json({ ok: false, error: "Invalid periodId" });
+  const { period } = req;
+  if (!period) {
+    return res.status(500).json({ message: "Period not loaded" });
+  }
 
   try {
-    const report = await buildPeriodReport(parsed.data.periodId);
+    const report = await buildPeriodReport(period.id);
     const html = renderPeriodReportHtml(report);
 
     // Import dinámico (ESM-friendly)
@@ -43,7 +44,7 @@ export async function adminGetPeriodReportPdf(req: Request, res: Response) {
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="${filename}"`
+        `attachment; filename="${filename}"`,
       );
       return res.status(200).send(pdf);
     } finally {

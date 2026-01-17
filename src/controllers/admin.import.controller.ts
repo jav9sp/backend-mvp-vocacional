@@ -27,7 +27,7 @@ function str(v: any) {
 function pick(row: Record<string, any>, keys: string[]) {
   for (const k of keys) {
     const found = Object.keys(row).find(
-      (rk) => rk.trim().toLowerCase() === k.toLowerCase()
+      (rk) => rk.trim().toLowerCase() === k.toLowerCase(),
     );
     if (found) return row[found];
   }
@@ -83,15 +83,10 @@ function getPresentCanonicalHeaders(rows: Record<string, any>[]) {
 }
 
 export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
-  const parsed = ParamsSchema.safeParse(req.params);
-  if (!parsed.success)
-    return res.status(400).json({ ok: false, error: "Invalid periodId" });
-
-  const { periodId } = parsed.data;
-
-  const period = await Period.findByPk(periodId);
-  if (!period)
-    return res.status(404).json({ ok: false, error: "Period not found" });
+  const { period } = req;
+  if (!period) {
+    return res.status(500).json({ message: "Period not loaded" });
+  }
 
   const file = req.file as Express.Multer.File | undefined;
   if (!file)

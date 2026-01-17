@@ -1,11 +1,25 @@
 import { NextFunction, Request, Response } from "express";
-import { Op, fn, col, literal } from "sequelize";
+import { z } from "zod";
+import bcrypt from "bcrypt";
+import { Op, fn, col } from "sequelize";
 import User from "../models/User.model.ts";
 import Enrollment from "../models/Enrollment.model.ts";
 import Period from "../models/Period.model.ts";
 import Attempt from "../models/Attempt.model.ts";
+import { normalizeRut } from "../utils/rut.ts";
 
 type DerivedStatus = "not_started" | "in_progress" | "finished";
+
+const ParamsSchema = z.object({
+  studentId: z.coerce.number().int().positive(),
+});
+
+const PatchStudentSchema = z.object({
+  name: z.string().trim().min(2).max(120).optional(),
+  email: z.email().max(180).optional(),
+  rut: z.string().trim().min(3).max(20).optional(),
+  mustChangePassword: z.boolean().optional(),
+});
 
 function normalizeStatusFromAttempt(a?: any | null): DerivedStatus {
   if (!a) return "not_started";
@@ -14,7 +28,7 @@ function normalizeStatusFromAttempt(a?: any | null): DerivedStatus {
 }
 
 function deriveStatus(
-  attempt: any | null
+  attempt: any | null,
 ): "not_started" | "in_progress" | "finished" {
   if (!attempt) return "not_started";
   return attempt.status === "finished" ? "finished" : "in_progress";
@@ -190,9 +204,9 @@ export async function adminGetStudents(req: Request, res: Response) {
         Enrollment.sequelize!.fn(
           "JSON_EXTRACT",
           Enrollment.sequelize!.col("meta"),
-          "$.course"
+          "$.course",
         ),
-        `"${course}"`
+        `"${course}"`,
       ),
     ];
   }
@@ -207,7 +221,7 @@ export async function adminGetStudents(req: Request, res: Response) {
   // Si filtraste por curso, hay estudiantes que NO tienen enrollment en ese curso:
   // en ese caso, mejor devolver solo los que tienen match (más consistente con filtro).
   const allowedStudentIds = new Set<number>(
-    enrollAgg.map((r: any) => Number(r.studentUserId))
+    enrollAgg.map((r: any) => Number(r.studentUserId)),
   );
 
   const filteredStudents = course
@@ -331,25 +345,16 @@ export async function adminGetStudents(req: Request, res: Response) {
 export async function adminGetStudentDetail(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const orgId = req.auth?.organizationId;
     if (!orgId)
       return res.status(401).json({ ok: false, error: "Unauthorized" });
 
-    const studentId = Number(req.params.studentId);
-    if (!Number.isFinite(studentId)) {
-      return res.status(400).json({ ok: false, error: "Invalid studentId" });
-    }
-
-    const student = await User.findOne({
-      where: { id: studentId, role: "student", organizationId: orgId },
-      attributes: ["id", "rut", "name", "email"],
-    });
-
+    const { student } = req;
     if (!student) {
-      return res.status(404).json({ ok: false, error: "Student not found" });
+      return res.status(500).json({ ok: false, error: "Student not loaded" });
     }
 
     const enrollments = await Enrollment.findAll({
@@ -429,13 +434,98 @@ export async function adminGetStudentDetail(
       ok: true,
       student: {
         id: student.id,
-        rut: (student as any).rut ?? null,
+        rut: student.rut ?? null,
         name: student.name,
-        email: (student as any).email ?? null,
+        email: student.email ?? null,
+        mustChangePassword: student.mustChangePassword ?? null,
       },
       enrollments: rows,
     });
   } catch (error) {
     return next(error);
+  }
+}
+
+export async function adminPatchStudent(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const b = PatchStudentSchema.safeParse(req.body);
+    if (!b.success) {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid body",
+        issues: b.error.issues,
+      });
+    }
+
+    const patch = b.data;
+
+    const student = req.studentModel;
+    if (!student) {
+      return res.status(500).json({ ok: false, error: "Student not loaded" });
+    }
+
+    // Evitar colisiones (UNIQUE global)
+    if (patch.email && patch.email !== student.email) {
+      const exists = await User.findOne({ where: { email: patch.email } });
+      if (exists) {
+        return res
+          .status(409)
+          .json({ ok: false, error: "Email already in use" });
+      }
+    }
+
+    if (patch.rut && patch.rut !== student.rut) {
+      const exists = await User.findOne({ where: { rut: patch.rut } });
+      if (exists) {
+        return res.status(409).json({ ok: false, error: "RUT already in use" });
+      }
+    }
+
+    await student.update(patch);
+
+    return res.json({
+      ok: true,
+      student: {
+        id: student.id,
+        rut: student.rut,
+        name: student.name,
+        email: student.email,
+        mustChangePassword: student.mustChangePassword,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function adminResetStudentPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const student = req.studentModel;
+    if (!student)
+      return res.status(500).json({ ok: false, error: "Student not loaded" });
+
+    const newRaw = normalizeRut(student.rut);
+    const passwordHash = await bcrypt.hash(newRaw, 10);
+
+    await student.update({
+      passwordHash,
+      mustChangePassword: true,
+    });
+
+    return res.json({
+      ok: true,
+      resetTo: "rut",
+      mustChangePassword: true,
+    });
+  } catch (err) {
+    return next(err);
   }
 }

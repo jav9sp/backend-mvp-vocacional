@@ -3,6 +3,8 @@ import { z } from "zod";
 import Attempt from "../models/Attempt.model.ts";
 import Result from "../models/Result.model.ts";
 import Period from "../models/Period.model.ts";
+import User from "../models/User.model.ts";
+import Test from "../models/Test.model.ts";
 
 const ParamsSchema = z.object({
   attemptId: z.coerce.number().int().positive(),
@@ -11,14 +13,15 @@ const ParamsSchema = z.object({
 export async function adminGetAttemptResult(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
-  // Para filtrar por intentos de la organización
   const { organizationId } = req.auth!;
+
   try {
     const parsed = ParamsSchema.safeParse(req.params);
-    if (!parsed.success)
+    if (!parsed.success) {
       return res.status(400).json({ ok: false, error: "Invalid attemptId" });
+    }
 
     const { attemptId } = parsed.data;
 
@@ -30,30 +33,43 @@ export async function adminGetAttemptResult(
         "finishedAt",
         "userId",
         "testId",
+        "periodId",
       ],
       include: [
         {
           model: Period,
           as: "period",
-          attributes: ["id", "organizationId"],
+          attributes: ["id", "organizationId", "name", "status", "testId"],
           where: { organizationId },
+          required: true,
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "rut", "name", "email"],
+          required: true,
+        },
+        {
+          model: Test,
+          as: "test",
+          attributes: ["id", "name", "version"],
           required: true,
         },
       ],
     });
 
-    if (!attempt)
+    if (!attempt) {
       return res.status(404).json({ ok: false, error: "Attempt not found" });
+    }
 
     const result = await Result.findOne({
       where: { attemptId: attempt.id },
       attributes: ["scoresByArea", "scoresByAreaDim", "topAreas", "createdAt"],
     });
 
-    const resultState = result ? "present" : "missing";
-
     return res.json({
       ok: true,
+
       attempt: {
         id: attempt.id,
         status: attempt.status,
@@ -61,8 +77,37 @@ export async function adminGetAttemptResult(
         finishedAt: attempt.finishedAt,
         userId: attempt.userId,
         testId: attempt.testId,
+        periodId: attempt.periodId,
       },
-      resultState,
+
+      student: attempt.user
+        ? {
+            id: attempt.user.id,
+            rut: attempt.user.rut,
+            name: attempt.user.name,
+            email: attempt.user.email,
+          }
+        : null,
+
+      period: attempt.period
+        ? {
+            id: attempt.period.id,
+            name: attempt.period.name,
+            status: attempt.period.status,
+            testId: attempt.period.testId,
+          }
+        : null,
+
+      test: attempt.test
+        ? {
+            id: attempt.test.id,
+            name: attempt.test.name,
+            version: attempt.test.version,
+          }
+        : null,
+
+      resultState: result ? "present" : "missing",
+
       result: result
         ? {
             scoresByArea: result.scoresByArea,

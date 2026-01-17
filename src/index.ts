@@ -10,7 +10,7 @@ import authRoutes from "./routes/auth/auth.routes.ts";
 import enrollmentsRoutes from "./routes/student/enrollments.router.ts";
 import attemptsRoutes from "./routes/student/attempts.routes.ts";
 import resultsRoutes from "./routes/student/results.routes.ts";
-import adminRoutes from "./routes/admin.routes.ts";
+import adminRoutes from "./routes/admin/admin.routes.ts";
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use(
   cors({
     origin: process.env.WEB_URL,
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 

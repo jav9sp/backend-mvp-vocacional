@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import User from "../models/User.model.ts";
 import { signAccessToken } from "../utils/jwt.ts";
+import Organization from "../models/Organization.model.ts";
 
 const LoginBodySchema = z.object({
   email: z.email(),
@@ -39,12 +40,22 @@ export async function login(req: Request, res: Response) {
     organizationId: user.organizationId,
   });
 
+  // Encontrar Organización
+  const org = await Organization.findOne({
+    where: { id: user.organizationId },
+  });
+  if (!org)
+    return res
+      .status(404)
+      .json({ ok: false, error: "Organization not found for this user" });
+
   return res.json({
     ok: true,
     token,
     user: {
       id: user.id,
       organizationId: user.organizationId,
+      organizationName: org.name,
       role: user.role,
       name: user.name,
       email: user.email,
