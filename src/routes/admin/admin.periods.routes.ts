@@ -5,18 +5,18 @@ import {
   adminGetPeriodById,
   adminListPeriods,
   adminUpdatePeriod,
-} from "../../controllers/admin.periods.controller.ts";
-import { adminListEnrollments } from "../../controllers/admin.enrollments.controller.ts";
-import { adminExportPeriodCSV } from "../../controllers/admin.export.controller.ts";
-import { uploadXlsx } from "../../middlewares/upload.middleware.ts";
-import { adminImportEnrollmentsXlsx } from "../../controllers/admin.import.controller.ts";
-import { adminGetPeriodReport } from "../../controllers/admin.report.controller.ts";
-import { adminGetPeriodReportPdf } from "../../controllers/admin.report.pdf.controller.ts";
+} from "../../controllers/admin.periods.controller.js";
+import { adminListEnrollments } from "../../controllers/admin.enrollments.controller.js";
+import { adminExportPeriodCSV } from "../../controllers/admin.export.controller.js";
+import { uploadXlsx } from "../../middlewares/upload.middleware.js";
+import { adminImportEnrollmentsXlsx } from "../../controllers/admin.import.controller.js";
+import { adminGetPeriodReport } from "../../controllers/admin.report.controller.js";
+import { adminGetPeriodReportPdf } from "../../controllers/admin.report.pdf.controller.js";
 import {
   getPeriodStudents,
   getPeriodSummary,
-} from "../../controllers/admin.periods.detail.controller.ts";
-import { requireAdminPeriod } from "../../middlewares/requierePeriod.middleware.ts";
+} from "../../controllers/admin.periods.detail.controller.js";
+import { requireAdminPeriod } from "../../middlewares/requierePeriod.middleware.js";
 
 const router = Router();
 

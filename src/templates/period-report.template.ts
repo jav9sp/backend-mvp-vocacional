@@ -1,4 +1,4 @@
-import type { PeriodReport } from "../services/period-report.service.ts";
+import type { PeriodReport } from "../services/period-report.service.js";
 
 function esc(s: any) {
   return (s ?? "")
@@ -44,7 +44,7 @@ export function renderPeriodReportHtml(data: PeriodReport) {
         <td class="r">${v.inProgress}</td>
         <td class="r"><b>${v.finished}</b></td>
       </tr>
-    `
+    `,
     )
     .join("");
 
@@ -79,8 +79,8 @@ export function renderPeriodReportHtml(data: PeriodReport) {
     <div>
       <h1>Reporte de Periodo</h1>
       <div class="muted">${esc(period.name)} · Estado: ${esc(
-    period.status
-  )} · TestID: ${period.testId}</div>
+        period.status,
+      )} · TestID: ${period.testId}</div>
     </div>
     <div class="muted">Generado: ${new Date().toLocaleString("es-CL")}</div>
   </div>

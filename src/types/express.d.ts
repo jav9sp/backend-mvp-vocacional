@@ -1,6 +1,6 @@
-import Period from "../models/Period.model.ts";
-import User from "../models/User.model.ts";
-import { SafeUser } from "./dtos.ts";
+import Period from "../models/Period.model.js";
+import User from "../models/User.model.js";
+import { SafeUser } from "./dtos.js";
 
 declare global {
   namespace Express {

@@ -1,8 +1,8 @@
-import Period from "../models/Period.model.ts";
-import Enrollment from "../models/Enrollment.model.ts";
-import Attempt from "../models/Attempt.model.ts";
-import Result from "../models/Result.model.ts";
-import { areaName } from "../utils/inapv-areas.ts";
+import Period from "../models/Period.model.js";
+import Enrollment from "../models/Enrollment.model.js";
+import Attempt from "../models/Attempt.model.js";
+import Result from "../models/Result.model.js";
+import { areaName } from "../utils/inapv-areas.js";
 
 function getCourse(meta: any): string {
   if (!meta) return "Sin curso";
@@ -36,7 +36,7 @@ export type PeriodReport = {
 };
 
 export async function buildPeriodReport(
-  periodId: number
+  periodId: number,
 ): Promise<PeriodReport> {
   const period = await Period.findByPk(periodId);
   if (!period) throw new Error("Period not found");
@@ -69,7 +69,7 @@ export async function buildPeriodReport(
   }
 
   const attemptIds = Array.from(latestAttemptByUserId.values()).map(
-    (a) => a.id
+    (a) => a.id,
   );
 
   const results = attemptIds.length

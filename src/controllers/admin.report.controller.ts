@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buildPeriodReport } from "../services/period-report.service.ts";
+import { buildPeriodReport } from "../services/period-report.service.js";
 
 export async function adminGetPeriodReport(req: Request, res: Response) {
   const { period } = req;

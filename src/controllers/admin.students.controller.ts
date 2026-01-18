@@ -2,11 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { Op, fn, col } from "sequelize";
-import User from "../models/User.model.ts";
-import Enrollment from "../models/Enrollment.model.ts";
-import Period from "../models/Period.model.ts";
-import Attempt from "../models/Attempt.model.ts";
-import { normalizeRut } from "../utils/rut.ts";
+import User from "../models/User.model.js";
+import Enrollment from "../models/Enrollment.model.js";
+import Period from "../models/Period.model.js";
+import Attempt from "../models/Attempt.model.js";
+import { normalizeRut } from "../utils/rut.js";
 
 type DerivedStatus = "not_started" | "in_progress" | "finished";
 

@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import Attempt from "../models/Attempt.model.ts";
-import Result from "../models/Result.model.ts";
-import Test from "../models/Test.model.ts";
-import Period from "../models/Period.model.ts";
+import Attempt from "../models/Attempt.model.js";
+import Result from "../models/Result.model.js";
+import Test from "../models/Test.model.js";
+import Period from "../models/Period.model.js";
 
 export async function getMyLatestResult(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const { userId, organizationId } = req.auth!;
   try {

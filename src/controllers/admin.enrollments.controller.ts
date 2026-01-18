@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import Enrollment from "../models/Enrollment.model.ts";
-import User from "../models/User.model.ts";
-import Attempt from "../models/Attempt.model.ts";
-import Result from "../models/Result.model.ts";
+import Enrollment from "../models/Enrollment.model.js";
+import User from "../models/User.model.js";
+import Attempt from "../models/Attempt.model.js";
+import Result from "../models/Result.model.js";
 
 export async function adminListEnrollments(req: Request, res: Response) {
   const { period } = req;

@@ -1,4 +1,4 @@
-import { InapArea, InapQuestion } from "./inapv.types.ts";
+import { InapArea, InapQuestion } from "./inapv.types.js";
 
 export const INAPV_AREAS: InapArea[] = [
   { key: "adm", name: "Administración de Empresas y Derecho" },

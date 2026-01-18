@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import Period from "../models/Period.model.ts";
+import Period from "../models/Period.model.js";
 
 const PeriodIdParamsSchema = z.object({
   periodId: z.coerce.number().int().positive(),

@@ -1,20 +1,20 @@
 import { Router } from "express";
-import { requireAuth, requireRole } from "../../middlewares/auth.middleware.ts";
+import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
 
-import { adminGetAttemptResult } from "../../controllers/admin.results.controller.ts";
+import { adminGetAttemptResult } from "../../controllers/admin.results.controller.js";
 
 import {
   adminGetStudentDetail,
   adminGetStudents,
   adminPatchStudent,
   adminResetStudentPassword,
-} from "../../controllers/admin.students.controller.ts";
+} from "../../controllers/admin.students.controller.js";
 
-import { adminGetDashboard } from "../../controllers/admin.dashboard.controller.ts";
-import { adminListTests } from "../../controllers/admin.tests.controller.ts";
+import { adminGetDashboard } from "../../controllers/admin.dashboard.controller.js";
+import { adminListTests } from "../../controllers/admin.tests.controller.js";
 
-import periodsRouter from "./admin.periods.routes.ts";
-import studentsRouter from "./admin.students.routes.ts";
+import periodsRouter from "./admin.periods.routes.js";
+import studentsRouter from "./admin.students.routes.js";
 
 const router = Router();
 

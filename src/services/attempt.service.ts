@@ -1,8 +1,8 @@
-import Attempt from "../models/Attempt.model.ts";
-import Enrollment from "../models/Enrollment.model.ts";
-import Period from "../models/Period.model.ts";
-import Test from "../models/Test.model.ts";
-import User from "../models/User.model.ts";
+import Attempt from "../models/Attempt.model.js";
+import Enrollment from "../models/Enrollment.model.js";
+import Period from "../models/Period.model.js";
+import Test from "../models/Test.model.js";
+import User from "../models/User.model.js";
 
 export async function getTestById(id: Period["testId"]): Promise<Test> {
   const test = await Test.findOne({ where: { id } });
@@ -12,7 +12,7 @@ export async function getTestById(id: Period["testId"]): Promise<Test> {
 
 export async function getActiveEnrollment(
   userId: User["id"],
-  orgId: User["organizationId"]
+  orgId: User["organizationId"],
 ): Promise<Enrollment> {
   const enrollment = await Enrollment.findOne({
     where: { status: "active", studentUserId: userId },
@@ -36,7 +36,7 @@ export async function getActiveEnrollment(
 export async function getOrCreateActiveAttempt(
   userId: User["id"],
   periodId: Period["id"],
-  testId: Period["testId"]
+  testId: Period["testId"],
 ): Promise<Attempt> {
   const finished = await Attempt.findOne({
     where: {

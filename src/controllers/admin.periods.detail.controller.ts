@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { Op, fn, col, literal, Sequelize } from "sequelize";
-import Enrollment from "../models/Enrollment.model.ts";
-import Attempt from "../models/Attempt.model.ts";
-import User from "../models/User.model.ts";
+import Enrollment from "../models/Enrollment.model.js";
+import Attempt from "../models/Attempt.model.js";
+import User from "../models/User.model.js";
 
 export async function getPeriodSummary(req: Request, res: Response) {
   const { period } = req;

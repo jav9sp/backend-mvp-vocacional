@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import User from "../models/User.model.ts";
-import { SafeUser } from "../types/dtos.ts";
+import User from "../models/User.model.js";
+import { SafeUser } from "../types/dtos.js";
 
 const SAFE_ATTRS = ["id", "rut", "name", "email"] as const;
 

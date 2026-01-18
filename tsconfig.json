@@ -12,8 +12,6 @@
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
   },
   "include": ["src/**/*.ts"],
 }

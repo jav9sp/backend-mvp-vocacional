@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
-import { z } from "zod";
-import { buildPeriodReport } from "../services/period-report.service.ts";
-import { renderPeriodReportHtml } from "../templates/period-report.template.ts";
-
-const ParamsSchema = z.object({ periodId: z.coerce.number().int().positive() });
+import { buildPeriodReport } from "../services/period-report.service.js";
+import { renderPeriodReportHtml } from "../templates/period-report.template.js";
 
 export async function adminGetPeriodReportPdf(req: Request, res: Response) {
   const { period } = req;

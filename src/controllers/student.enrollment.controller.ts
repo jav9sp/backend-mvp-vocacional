@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { Op } from "sequelize";
-import Enrollment from "../models/Enrollment.model.ts";
-import Period from "../models/Period.model.ts";
-import Test from "../models/Test.model.ts";
-import Attempt from "../models/Attempt.model.ts";
-import { getOrCreateActiveAttempt } from "../services/attempt.service.ts";
+import Enrollment from "../models/Enrollment.model.js";
+import Period from "../models/Period.model.js";
+import Test from "../models/Test.model.js";
+import Attempt from "../models/Attempt.model.js";
+import { getOrCreateActiveAttempt } from "../services/attempt.service.js";
 
 const EnrollmentIdParamsSchema = z.object({
   enrollmentId: z.coerce.number().int().positive(),
@@ -14,7 +14,7 @@ const EnrollmentIdParamsSchema = z.object({
 export async function listMyActiveEnrollments(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { userId, organizationId } = req.auth!;
@@ -38,7 +38,7 @@ export async function listMyActiveEnrollments(
 
     const periodById = new Map(periods.map((p) => [p.id, p]));
     const visibleEnrollments = enrollments.filter((e) =>
-      periodById.has(e.periodId)
+      periodById.has(e.periodId),
     );
 
     if (visibleEnrollments.length === 0) {
@@ -125,7 +125,7 @@ export async function listMyActiveEnrollments(
 export async function getOrCreateAttemptForEnrollment(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const parsed = EnrollmentIdParamsSchema.safeParse(req.params);
@@ -172,7 +172,7 @@ export async function getOrCreateAttemptForEnrollment(
     const attempt = await getOrCreateActiveAttempt(
       userId,
       period.id,
-      period.testId
+      period.testId,
     );
 
     return res.json({

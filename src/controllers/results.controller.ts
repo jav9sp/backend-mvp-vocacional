@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import Attempt from "../models/Attempt.model.ts";
-import Result from "../models/Result.model.ts";
+import Attempt from "../models/Attempt.model.js";
+import Result from "../models/Result.model.js";
 
 const AttemptIdParamsSchema = z.object({
   attemptId: z.coerce.number().int().positive(),
@@ -10,7 +10,7 @@ const AttemptIdParamsSchema = z.object({
 export async function getAttemptResult(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const paramsParsed = AttemptIdParamsSchema.safeParse(req.params);
