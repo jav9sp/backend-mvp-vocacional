@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 
-import { Op, fn, col, literal } from "sequelize";
+import { Op, fn, col } from "sequelize";
 import Period from "../models/Period.model.js";
 import Test from "../models/Test.model.js";
 import Organization from "../models/Organization.model.js";

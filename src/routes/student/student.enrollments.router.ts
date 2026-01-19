@@ -7,8 +7,6 @@ import {
 
 const router = Router();
 
-router.use(requireAuth, requireRole("student"));
-
 /**
  * @openapi
  * /enrollments/active:

@@ -9,6 +9,7 @@ import {
   ForeignKey,
   Unique,
   Index,
+  BelongsTo,
 } from "sequelize-typescript";
 import Attempt from "./Attempt.model.js";
 
@@ -31,6 +32,9 @@ class Result extends Model {
   @Index("idx_results_attempt")
   @Column(DataType.INTEGER)
   declare attemptId: number;
+
+  @BelongsTo(() => Attempt, { foreignKey: "attemptId", as: "attempt" })
+  declare attempt?: Attempt;
 
   @AllowNull(false)
   @Column(DataType.JSON)

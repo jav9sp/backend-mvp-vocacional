@@ -3,13 +3,6 @@ import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
 
 import { adminGetAttemptResult } from "../../controllers/admin.results.controller.js";
 
-import {
-  adminGetStudentDetail,
-  adminGetStudents,
-  adminPatchStudent,
-  adminResetStudentPassword,
-} from "../../controllers/admin.students.controller.js";
-
 import { adminGetDashboard } from "../../controllers/admin.dashboard.controller.js";
 import { adminListTests } from "../../controllers/admin.tests.controller.js";
 

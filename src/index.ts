@@ -7,10 +7,8 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 
 import authRoutes from "./routes/auth/auth.routes.js";
-import enrollmentsRoutes from "./routes/student/enrollments.router.js";
-import attemptsRoutes from "./routes/student/attempts.routes.js";
-import resultsRoutes from "./routes/student/results.routes.js";
 import adminRoutes from "./routes/admin/admin.routes.js";
+import studentRouter from "./routes/student/student.routes.js";
 
 const app = express();
 
@@ -20,6 +18,7 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(express.json());
 
 app.get("/docs.json", (_req, res) => res.json(swaggerSpec));
@@ -42,13 +41,10 @@ app.get("/health/db", async (_req, res) => {
   }
 });
 
-// TODO: Ver cómo ordenar mejor las rutas añadiendo "/student"
 // Rutas
 app.use("/auth", authRoutes);
-app.use("/enrollments", enrollmentsRoutes);
-app.use("/attempts", attemptsRoutes);
-app.use("/results", resultsRoutes);
 app.use("/admin", adminRoutes);
+app.use("/student", studentRouter);
 
 // (Opcional) 404 consistente
 app.use((_req, res) => {

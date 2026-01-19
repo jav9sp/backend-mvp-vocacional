@@ -10,10 +10,12 @@ import {
   ForeignKey,
   Index,
   BelongsTo,
+  HasOne,
 } from "sequelize-typescript";
 import User from "./User.model.js";
 import Test from "./Test.model.js";
 import Period from "./Period.model.js";
+import Result from "./Result.model.js";
 
 export type AttemptStatus = "in_progress" | "finished";
 
@@ -30,11 +32,26 @@ class Attempt extends Model {
   @Column(DataType.INTEGER)
   declare userId: number;
 
+  @BelongsTo(() => User, { foreignKey: "userId", as: "user" })
+  declare user?: User;
+
+  @Index("idx_attempts_period")
+  @ForeignKey(() => Period)
+  @AllowNull(false)
+  @Column(DataType.INTEGER)
+  declare periodId: number;
+
+  @BelongsTo(() => Period, { foreignKey: "periodId", as: "period" })
+  declare period?: Period;
+
   @ForeignKey(() => Test)
   @AllowNull(false)
   @Index("idx_attempts_test")
   @Column(DataType.INTEGER)
   declare testId: number;
+
+  @BelongsTo(() => Test, { foreignKey: "testId", as: "test" })
+  declare test?: Test;
 
   @Default("in_progress")
   @AllowNull(false)
@@ -49,20 +66,8 @@ class Attempt extends Model {
   @Column(DataType.DATE)
   declare finishedAt: Date | null;
 
-  @Index("idx_attempts_period")
-  @ForeignKey(() => Period)
-  @AllowNull(false)
-  @Column(DataType.INTEGER)
-  declare periodId: number;
-
-  @BelongsTo(() => Period, { foreignKey: "periodId", as: "period" })
-  declare period?: Period;
-
-  @BelongsTo(() => User, { foreignKey: "userId", as: "user" })
-  declare user?: User;
-
-  @BelongsTo(() => Test, { foreignKey: "testId", as: "test" })
-  declare test?: Test;
+  @HasOne(() => Result, { foreignKey: "attemptId", as: "result" })
+  declare result?: Result;
 }
 
 export default Attempt;

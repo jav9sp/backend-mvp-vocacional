@@ -25,7 +25,7 @@ export async function requiereStudent(
 
   if (!user) return res.status(404).json({ message: "Student not found" });
 
-  req.studentModel = user;
+  req.userModel = user;
   req.student = user.get({ plain: true }) as SafeUser;
 
   next();

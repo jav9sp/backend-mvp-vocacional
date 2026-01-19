@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
-import { getMyLatestResult } from "../../controllers/results.me.controller.js";
+import {
+  getResultDetails,
+  listStudentResults,
+} from "../../controllers/student.results.controller.js";
 
 const router = Router();
-
-router.use(requireAuth, requireRole("student"));
 
 /**
  * @openapi
@@ -31,6 +31,8 @@ router.use(requireAuth, requireRole("student"));
  *           application/json:
  *             schema: { $ref: '#/components/schemas/ErrorResponse' }
  */
-router.get("/me/latest", getMyLatestResult);
+router.get("/", listStudentResults);
+
+router.get("/:resultsId/details", getResultDetails);
 
 export default router;

@@ -463,7 +463,7 @@ export async function adminPatchStudent(
 
     const patch = b.data;
 
-    const student = req.studentModel;
+    const student = req.userModel;
     if (!student) {
       return res.status(500).json({ ok: false, error: "Student not loaded" });
     }
@@ -508,7 +508,7 @@ export async function adminResetStudentPassword(
   next: NextFunction,
 ) {
   try {
-    const student = req.studentModel;
+    const student = req.userModel;
     if (!student)
       return res.status(500).json({ ok: false, error: "Student not loaded" });
 

@@ -18,11 +18,11 @@ class Test extends Model {
 
   @AllowNull(false)
   @Column(DataType.STRING(40))
-  declare key: string; // "inapv"
+  declare key: string;
 
   @AllowNull(false)
   @Column(DataType.STRING(20))
-  declare version: string; // "v1"
+  declare version: string;
 
   @AllowNull(false)
   @Column(DataType.STRING(120))

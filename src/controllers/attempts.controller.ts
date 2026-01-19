@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { sequelize } from "../config/sequelize.js";
 
-import Attempt from "../models/Attempt.model.js";
 import Answer from "../models/Answer.model.js";
 import Question from "../models/Question.model.js";
 import Result from "../models/Result.model.js";
@@ -13,10 +12,6 @@ import { SaveAnswersBodySchema } from "../validators/attempts.schemas.js";
 import Test from "../models/Test.model.js";
 import Period from "../models/Period.model.js";
 
-const ParamsSchema = z.object({
-  attemptId: z.coerce.number().int().positive(),
-});
-
 const EXPECTED_ANSWER_COUNT = 103;
 
 export async function getAttemptContext(
@@ -25,33 +20,10 @@ export async function getAttemptContext(
   next: NextFunction,
 ) {
   try {
-    const parsed = ParamsSchema.safeParse(req.params);
-    if (!parsed.success) {
-      return res.status(400).json({ ok: false, error: "Invalid attemptId" });
-    }
-
-    const { attemptId } = parsed.data;
-    const { userId, organizationId } = req.auth!;
-
-    const attempt = await Attempt.findByPk(attemptId, {
-      attributes: [
-        "id",
-        "userId",
-        "periodId",
-        "testId",
-        "status",
-        "answeredCount",
-        "finishedAt",
-      ],
-    });
-
+    const orgId = req.auth?.organizationId;
+    const { attempt } = req;
     if (!attempt) {
-      return res.status(404).json({ ok: false, error: "Attempt not found" });
-    }
-
-    // Ownership
-    if (attempt.userId !== userId) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
+      return res.status(500).json({ message: "Period not loaded" });
     }
 
     // Period + org scoping
@@ -73,7 +45,7 @@ export async function getAttemptContext(
         .json({ ok: false, error: "Period missing for attempt" });
     }
 
-    if (period.organizationId !== organizationId) {
+    if (period.organizationId !== orgId) {
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
@@ -130,22 +102,9 @@ export async function getAttemptAnswers(
   next: NextFunction,
 ) {
   try {
-    const paramsParsed = ParamsSchema.safeParse(req.params);
-    if (!paramsParsed.success) {
-      return res.status(400).json({ ok: false, error: "Invalid attemptId" });
-    }
-
-    const { attemptId } = paramsParsed.data;
-
-    const attempt = await Attempt.findByPk(attemptId, {
-      attributes: ["id", "userId", "status", "answeredCount", "testId"],
-    });
-
-    if (!attempt)
-      return res.status(404).json({ ok: false, error: "Attempt not found" });
-
-    if (attempt.userId !== req.auth!.userId) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
+    const { attempt } = req;
+    if (!attempt) {
+      return res.status(500).json({ message: "Period not loaded" });
     }
 
     // Devolvemos todas las respuestas de ese attempt (103 máx, liviano)
@@ -179,9 +138,9 @@ export async function saveAttemptAnswers(
   next: NextFunction,
 ) {
   try {
-    const paramsParsed = ParamsSchema.safeParse(req.params);
-    if (!paramsParsed.success) {
-      return res.status(400).json({ ok: false, error: "Invalid attemptId" });
+    const { attempt } = req;
+    if (!attempt) {
+      return res.status(500).json({ message: "Period not loaded" });
     }
 
     const bodyParsed = SaveAnswersBodySchema.safeParse(req.body);
@@ -193,18 +152,9 @@ export async function saveAttemptAnswers(
       });
     }
 
-    const { attemptId } = paramsParsed.data;
     const { answers, answeredCount } = bodyParsed.data;
 
     // 1) Cargar attempt y validar ownership + estado
-    const attempt = await Attempt.findByPk(attemptId);
-    if (!attempt)
-      return res.status(404).json({ ok: false, error: "Attempt not found" });
-
-    if (attempt.userId !== req.auth!.userId) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
-    }
-
     if (attempt.status !== "in_progress") {
       return res.status(409).json({ ok: false, error: "Attempt is finished" });
     }
@@ -251,7 +201,7 @@ export async function saveAttemptAnswers(
       attempt: {
         id: attempt.id,
         status: attempt.status,
-        answeredCount: attempt.answeredCount, // puede ser 0 si el front no envía answeredCount aún
+        answeredCount: attempt.answeredCount,
       },
     });
   } catch (error) {
@@ -265,31 +215,9 @@ export async function finishAttempt(
   next: NextFunction,
 ) {
   try {
-    const paramsParsed = ParamsSchema.safeParse(req.params);
-    if (!paramsParsed.success) {
-      return res.status(400).json({ ok: false, error: "Invalid attemptId" });
-    }
-    const { attemptId } = paramsParsed.data;
-
-    const attempt = await Attempt.findByPk(attemptId, {
-      attributes: [
-        "id",
-        "userId",
-        "status",
-        "answeredCount",
-        "finishedAt",
-        "testId",
-        "periodId",
-      ],
-    });
-
+    const { attempt } = req;
     if (!attempt) {
-      return res.status(404).json({ ok: false, error: "Attempt not found" });
-    }
-
-    // Ownership
-    if (attempt.userId !== req.auth!.userId) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
+      return res.status(500).json({ message: "Period not loaded" });
     }
 
     // (Opcional pero recomendado) org-scope vía Period

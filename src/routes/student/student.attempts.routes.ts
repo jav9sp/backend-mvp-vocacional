@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
 import {
   getAttemptContext,
   getAttemptAnswers,
@@ -7,10 +6,9 @@ import {
   finishAttempt,
 } from "../../controllers/attempts.controller.js";
 import { getAttemptResult } from "../../controllers/results.controller.js";
+import { requiereStudentAttempt } from "../../middlewares/requiereAttempt.js";
 
 const router = Router();
-
-router.use(requireAuth, requireRole("student"));
 
 /**
  * @openapi
@@ -262,6 +260,8 @@ router.use(requireAuth, requireRole("student"));
  *           application/json:
  *             schema: { $ref: '#/components/schemas/ErrorResponse' }
  */
+router.use("/:attemptId", requiereStudentAttempt);
+
 router.get("/:attemptId", getAttemptContext);
 router.get("/:attemptId/result", getAttemptResult);
 router.get("/:attemptId/answers", getAttemptAnswers);
