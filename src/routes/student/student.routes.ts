@@ -4,6 +4,7 @@ import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
 import enrollmentsRouter from "./student.enrollments.router.js";
 import attemptsRouter from "./student.attempts.routes.js";
 import resultsRouter from "./student.results.routes.js";
+import profileRouter from "./student.profile.routes.js";
 
 const router = Router();
 
@@ -14,5 +15,7 @@ router.use("/enrollments", enrollmentsRouter);
 router.use("/attempts", attemptsRouter);
 
 router.use("/results", resultsRouter);
+
+router.use("/profile", profileRouter);
 
 export default router;

@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { z } from "zod";
-import User from "../models/User.model.js";
-import { signAccessToken } from "../utils/jwt.js";
-import Organization from "../models/Organization.model.js";
+import User from "../../models/User.model.js";
+import { signAccessToken } from "../../utils/jwt.js";
+import Organization from "../../models/Organization.model.js";
 
 const LoginBodySchema = z.object({
   email: z.email(),
@@ -16,7 +16,7 @@ export async function login(req: Request, res: Response) {
     return res.status(400).json({
       ok: false,
       error: "Invalid body",
-      details: parsed.error.flatten(),
+      details: z.treeifyError(parsed.error),
     });
   }
 

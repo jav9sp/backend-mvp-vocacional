@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 
 import { Op, fn, col } from "sequelize";
-import Period from "../models/Period.model.js";
-import Test from "../models/Test.model.js";
-import Organization from "../models/Organization.model.js";
-import Attempt from "../models/Attempt.model.js";
-import Enrollment from "../models/Enrollment.model.js";
+import Period from "../../models/Period.model.js";
+import Test from "../../models/Test.model.js";
+import Organization from "../../models/Organization.model.js";
+import Attempt from "../../models/Attempt.model.js";
+import Enrollment from "../../models/Enrollment.model.js";
 
 import {
   CreatePeriodSchema,
   PeriodIdParamsSchema,
   UpdatePeriodSchema,
-} from "../types/schemas.js";
+} from "../../types/schemas.js";
 
 export async function adminListPeriods(req: Request, res: Response) {
   const orgId = req.auth?.organizationId;
@@ -151,7 +151,7 @@ export async function adminCreatePeriod(req: Request, res: Response) {
 export async function adminGetPeriodById(req: Request, res: Response) {
   const { period } = req;
   if (!period) {
-    return res.status(500).json({ message: "Period not loaded" });
+    return res.status(500).json({ ok: false, error: "Period not loaded" });
   }
 
   return res.json({
@@ -173,7 +173,7 @@ export async function adminGetPeriodById(req: Request, res: Response) {
 export async function adminUpdatePeriod(req: Request, res: Response) {
   const { period } = req;
   if (!period) {
-    return res.status(500).json({ message: "Period not loaded" });
+    return res.status(500).json({ ok: false, error: "Period not loaded" });
   }
 
   const bodyParsed = UpdatePeriodSchema.safeParse(req.body);

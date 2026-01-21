@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { Op } from "sequelize";
-import Enrollment from "../models/Enrollment.model.js";
-import Period from "../models/Period.model.js";
-import Test from "../models/Test.model.js";
-import Attempt from "../models/Attempt.model.js";
-import { getOrCreateActiveAttempt } from "../services/attempt.service.js";
+import Enrollment from "../../models/Enrollment.model.js";
+import Period from "../../models/Period.model.js";
+import Test from "../../models/Test.model.js";
+import Attempt from "../../models/Attempt.model.js";
+import { getOrCreateActiveAttempt } from "../../services/attempt.service.js";
 
 const EnrollmentIdParamsSchema = z.object({
   enrollmentId: z.coerce.number().int().positive(),
@@ -69,7 +69,7 @@ export async function listMyActiveEnrollments(
       order: [["createdAt", "DESC"]],
     });
 
-    const attemptByPeriodId = new Map<number, Attempt>();
+    const attemptByPeriodId = new Map(attempts.map((a) => [a.periodId, a]));
     for (const a of attempts) {
       const existing = attemptByPeriodId.get(a.periodId);
       if (!existing) {

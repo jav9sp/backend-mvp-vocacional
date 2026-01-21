@@ -4,8 +4,9 @@ import {
   getAttemptAnswers,
   saveAttemptAnswers,
   finishAttempt,
-} from "../../controllers/attempts.controller.js";
-import { getAttemptResult } from "../../controllers/results.controller.js";
+  getAttemptResult,
+} from "../../controllers/student/student.attempts.controller.js";
+
 import { requiereStudentAttempt } from "../../middlewares/requiereAttempt.js";
 
 const router = Router();

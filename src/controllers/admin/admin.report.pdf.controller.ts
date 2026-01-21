@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { buildPeriodReport } from "../services/period-report.service.js";
-import { renderPeriodReportHtml } from "../templates/period-report.template.js";
+import { buildPeriodReport } from "../../services/period-report.service.js";
+import { renderPeriodReportHtml } from "../../templates/period-report.template.js";
 
 export async function adminGetPeriodReportPdf(req: Request, res: Response) {
   const { period } = req;
   if (!period) {
-    return res.status(500).json({ message: "Period not loaded" });
+    return res.status(500).json({ ok: false, error: "Period not loaded" });
   }
 
   try {

@@ -1,15 +1,10 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import * as XLSX from "xlsx";
-import Period from "../models/Period.model.js";
-import Enrollment from "../models/Enrollment.model.js";
-import User from "../models/User.model.js";
-import { normalizeRut } from "../utils/rut.js";
+import Enrollment from "../../models/Enrollment.model.js";
+import User from "../../models/User.model.js";
+import { normalizeRut } from "../../utils/rut.js";
 import bcrypt from "bcrypt"; // usa el que ya estés usando; si usas bcrypt, cámbialo
-
-const ParamsSchema = z.object({
-  periodId: z.coerce.number().int().positive(),
-});
 
 const RowSchema = z.object({
   rut: z.string().min(3, "RUT inválido / vacío"),
@@ -17,22 +12,6 @@ const RowSchema = z.object({
   email: z.email("Email inválido"),
   curso: z.string().optional().or(z.literal("")),
 });
-
-function str(v: any) {
-  return (v ?? "").toString().trim();
-}
-
-// Esperamos headers como: rut | nombre | curso | email (email opcional)
-// toleramos variantes: RUT, Rut, Nombre, Curso, Correo, Email
-function pick(row: Record<string, any>, keys: string[]) {
-  for (const k of keys) {
-    const found = Object.keys(row).find(
-      (rk) => rk.trim().toLowerCase() === k.toLowerCase(),
-    );
-    if (found) return row[found];
-  }
-  return "";
-}
 
 function normalizeHeaderKey(k: string) {
   return (k || "")
@@ -85,7 +64,7 @@ function getPresentCanonicalHeaders(rows: Record<string, any>[]) {
 export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
   const { period } = req;
   if (!period) {
-    return res.status(500).json({ message: "Period not loaded" });
+    return res.status(500).json({ ok: false, error: "Period not loaded" });
   }
 
   const file = req.file as Express.Multer.File | undefined;

@@ -4,7 +4,7 @@ import {
   adminGetStudents,
   adminPatchStudent,
   adminResetStudentPassword,
-} from "../../controllers/admin.students.controller.js";
+} from "../../controllers/admin/admin.students.controller.js";
 import { requiereStudent } from "../../middlewares/requiereStudent.middleware.js";
 
 const router = Router();

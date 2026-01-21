@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
 import {
   getOrCreateAttemptForEnrollment,
   listMyActiveEnrollments,
-} from "../../controllers/student.enrollment.controller.js";
+} from "../../controllers/student/student.enrollment.controller.js";
 
 const router = Router();
 

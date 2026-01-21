@@ -14,7 +14,7 @@ export async function requiereStudent(
 
   const id = Number(req.params.studentId);
   if (!Number.isFinite(id)) {
-    return res.status(400).json({ message: "Invalid studentId" });
+    return res.status(400).json({ ok: false, error: "Invalid studentId" });
   }
 
   const user = await User.findOne({
@@ -23,7 +23,8 @@ export async function requiereStudent(
     attributes: [...SAFE_ATTRS, "passwordHash", "mustChangePassword"], // o incluso sin estos si no los usas
   });
 
-  if (!user) return res.status(404).json({ message: "Student not found" });
+  if (!user)
+    return res.status(404).json({ ok: false, error: "Student not found" });
 
   req.userModel = user;
   req.student = user.get({ plain: true }) as SafeUser;

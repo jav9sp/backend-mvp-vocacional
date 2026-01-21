@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { Op, fn, col, literal, Sequelize } from "sequelize";
-import Enrollment from "../models/Enrollment.model.js";
-import Attempt from "../models/Attempt.model.js";
-import User from "../models/User.model.js";
+import Enrollment from "../../models/Enrollment.model.js";
+import Attempt from "../../models/Attempt.model.js";
+import User from "../../models/User.model.js";
 
 export async function getPeriodSummary(req: Request, res: Response) {
   const { period } = req;
   if (!period) {
-    return res.status(500).json({ message: "Period not loaded" });
+    return res.status(500).json({ ok: false, error: "Period not loaded" });
   }
 
   const studentsCount = await Enrollment.count({ where: { id: period.id } });

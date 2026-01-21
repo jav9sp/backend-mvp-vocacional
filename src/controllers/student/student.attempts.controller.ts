@@ -1,16 +1,16 @@
 import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
-import { sequelize } from "../config/sequelize.js";
+import { sequelize } from "../../config/sequelize.js";
 
-import Answer from "../models/Answer.model.js";
-import Question from "../models/Question.model.js";
-import Result from "../models/Result.model.js";
+import Answer from "../../models/Answer.model.js";
+import Question from "../../models/Question.model.js";
+import Result from "../../models/Result.model.js";
 
-import { INAPV_AREAS } from "../data/inapv.data.js";
-import { computeInapvScores } from "../services/scoring.service.js";
-import { SaveAnswersBodySchema } from "../validators/attempts.schemas.js";
-import Test from "../models/Test.model.js";
-import Period from "../models/Period.model.js";
+import { INAPV_AREAS } from "../../data/inapv.data.js";
+import { computeInapvScores } from "../../services/scoring.service.js";
+import { SaveAnswersBodySchema } from "../../validators/attempts.schemas.js";
+import Test from "../../models/Test.model.js";
+import Period from "../../models/Period.model.js";
 
 const EXPECTED_ANSWER_COUNT = 103;
 
@@ -23,7 +23,7 @@ export async function getAttemptContext(
     const orgId = req.auth?.organizationId;
     const { attempt } = req;
     if (!attempt) {
-      return res.status(500).json({ message: "Period not loaded" });
+      return res.status(500).json({ ok: false, error: "Period not loaded" });
     }
 
     // Period + org scoping
@@ -104,7 +104,7 @@ export async function getAttemptAnswers(
   try {
     const { attempt } = req;
     if (!attempt) {
-      return res.status(500).json({ message: "Period not loaded" });
+      return res.status(500).json({ ok: false, error: "Period not loaded" });
     }
 
     // Devolvemos todas las respuestas de ese attempt (103 máx, liviano)
@@ -140,7 +140,7 @@ export async function saveAttemptAnswers(
   try {
     const { attempt } = req;
     if (!attempt) {
-      return res.status(500).json({ message: "Period not loaded" });
+      return res.status(500).json({ ok: false, error: "Period not loaded" });
     }
 
     const bodyParsed = SaveAnswersBodySchema.safeParse(req.body);
@@ -217,7 +217,7 @@ export async function finishAttempt(
   try {
     const { attempt } = req;
     if (!attempt) {
-      return res.status(500).json({ message: "Period not loaded" });
+      return res.status(500).json({ ok: false, error: "Period not loaded" });
     }
 
     // (Opcional pero recomendado) org-scope vía Period
@@ -377,6 +377,64 @@ export async function finishAttempt(
         scoresByAreaDim: savedResult.scoresByAreaDim,
         topAreas: savedResult.topAreas,
         createdAt: savedResult.createdAt,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getAttemptResult(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { attempt } = req;
+    if (!attempt) {
+      return res.status(500).json({ ok: false, error: "Period not loaded" });
+    }
+
+    // Si no terminó, devuelve progreso
+    if (attempt.status !== "finished") {
+      return res.json({
+        ok: true,
+        status: attempt.status,
+        attempt: {
+          id: attempt.id,
+          answeredCount: attempt.answeredCount,
+        },
+        result: null,
+      });
+    }
+
+    // Buscar result persistido
+    const result = await Result.findOne({
+      where: { attemptId: attempt.id },
+      attributes: ["scoresByArea", "scoresByAreaDim", "topAreas", "createdAt"],
+    });
+
+    if (!result) {
+      // caso raro: finished sin result (inconsistencia)
+      return res.status(500).json({
+        ok: false,
+        error: "Result missing for finished attempt",
+      });
+    }
+
+    return res.json({
+      ok: true,
+      status: "finished",
+      attempt: {
+        id: attempt.id,
+        answeredCount: attempt.answeredCount,
+        finishedAt: attempt.finishedAt,
+      },
+      result: {
+        scoresByArea: result.scoresByArea,
+        scoresByAreaDim: result.scoresByAreaDim,
+        topAreas: result.topAreas,
+        createdAt: result.createdAt,
       },
     });
   } catch (error) {

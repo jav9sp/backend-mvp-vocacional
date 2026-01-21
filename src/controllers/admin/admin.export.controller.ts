@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
-import { z } from "zod";
-import Period from "../models/Period.model.js";
-import Enrollment from "../models/Enrollment.model.js";
-import User from "../models/User.model.js";
-import Attempt from "../models/Attempt.model.js";
-import Result from "../models/Result.model.js";
-import { areaName } from "../utils/inapv-areas.js";
+import Enrollment from "../../models/Enrollment.model.js";
+import User from "../../models/User.model.js";
+import Attempt from "../../models/Attempt.model.js";
+import Result from "../../models/Result.model.js";
+import { areaName } from "../../utils/inapv-areas.js";
 
 function csvEscape(v: any) {
   const s = (v ?? "").toString();
@@ -17,7 +15,7 @@ function csvEscape(v: any) {
 export async function adminExportPeriodCSV(req: Request, res: Response) {
   const { period } = req;
   if (!period) {
-    return res.status(500).json({ message: "Period not loaded" });
+    return res.status(500).json({ ok: false, error: "Period not loaded" });
   }
 
   const enrollments = await Enrollment.findAll({

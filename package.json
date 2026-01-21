@@ -8,9 +8,12 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "seed": "tsx src/seed.ts",
+    "seed": "tsx scripts/seed.ts",
     "seed:reset": "npm run seed -- --reset",
-    "db:alter": "tsx --env-file ../../.env src/alter.ts"
+    "db:alter": "tsx --env-file .env scripts/alter.ts",
+    "structure": "node --loader ts-node/esm scripts/generate-structure.ts",
+    "analyze:md": "node --loader ts-node/esm src/scripts/analyze-report.ts",
+    "map:functions": "node --loader ts-node/esm src/scripts/function-map.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +24,7 @@
     "bcrypt": "^6.0.0",
     "colors": "^1.4.0",
     "cors": "^2.8.5",
+    "directory-tree": "^3.5.2",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
@@ -46,7 +50,9 @@
     "@types/node": "^25.0.6",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "madge": "^8.0.0",
     "ts-node": "^10.9.2",
+    "ts-prune": "^0.10.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
