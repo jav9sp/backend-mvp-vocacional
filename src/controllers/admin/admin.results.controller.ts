@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import Attempt from "../../models/Attempt.model.js";
-import Result from "../../models/Result.model.js";
+import InapResult from "../../models/InapResult.model.js";
 import Period from "../../models/Period.model.js";
 import User from "../../models/User.model.js";
 import Test from "../../models/Test.model.js";
@@ -62,7 +62,7 @@ export async function adminGetAttemptResult(
       return res.status(404).json({ ok: false, error: "Attempt not found" });
     }
 
-    const result = await Result.findOne({
+    const result = await InapResult.findOne({
       where: { attemptId: attempt.id },
       attributes: ["scoresByArea", "scoresByAreaDim", "topAreas", "createdAt"],
     });
@@ -110,7 +110,7 @@ export async function adminGetAttemptResult(
 
       result: result
         ? {
-            scoresByArea: result.scoresByArea,
+            scoresByArea: result.scoresByAreaDim,
             scoresByAreaDim: result.scoresByAreaDim,
             topAreas: result.topAreas,
             createdAt: result.createdAt,

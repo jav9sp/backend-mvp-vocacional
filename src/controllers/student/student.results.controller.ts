@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import Attempt from "../../models/Attempt.model.js";
-import Result from "../../models/Result.model.js";
+import InapResult from "../../models/InapResult.model.js";
 import Test from "../../models/Test.model.js";
 
 export async function listStudentResults(
@@ -12,11 +12,12 @@ export async function listStudentResults(
   try {
     const { userId } = req.auth;
 
-    const results = await Result.findAll({
+    const results = await InapResult.findAll({
       attributes: [
         "id",
-        "scoresByArea",
         "scoresByAreaDim",
+        "maxByAreaDim",
+        "percentByAreaDim",
         "topAreas",
         "createdAt",
       ],
@@ -25,7 +26,7 @@ export async function listStudentResults(
           model: Attempt,
           as: "attempt",
           required: true,
-          attributes: ["id", "createdAt"],
+          attributes: ["id", "createdAt", "finishedAt"],
           where: { userId, status: "finished" },
           include: [
             {
@@ -76,7 +77,7 @@ export async function getResultDetails(
 
     const { resultsId } = parsed.data;
 
-    const result = await Result.findByPk(resultsId, {
+    const result = await InapResult.findByPk(resultsId, {
       include: [
         {
           model: Attempt,

@@ -15,7 +15,7 @@ import {
 import User from "./User.model.js";
 import Test from "./Test.model.js";
 import Period from "./Period.model.js";
-import Result from "./Result.model.js";
+import InapResult from "./InapResult.model.js";
 
 export type AttemptStatus = "in_progress" | "finished";
 
@@ -66,8 +66,8 @@ class Attempt extends Model {
   @Column(DataType.DATE)
   declare finishedAt: Date | null;
 
-  @HasOne(() => Result, { foreignKey: "attemptId", as: "result" })
-  declare result?: Result;
+  @HasOne(() => InapResult, { foreignKey: "attemptId", as: "result" })
+  declare result?: InapResult;
 }
 
 export default Attempt;

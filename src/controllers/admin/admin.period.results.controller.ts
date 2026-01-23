@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Op } from "sequelize";
 import Enrollment from "../../models/Enrollment.model.js";
 import Attempt from "../../models/Attempt.model.js";
-import Result from "../../models/Result.model.js";
+import InapResult from "../../models/InapResult.model.js";
 import User from "../../models/User.model.js";
 import Test from "../../models/Test.model.js";
 
@@ -65,7 +65,7 @@ export async function adminGetPeriodResults(
     // 2) Traer TODOS los resultados disponibles del periodo (para agregación)
     // Esto NO requiere paginación, porque lo usas para calcular agregados.
     // Si en el futuro tienes miles, lo optimizamos con SQL agregado o batch.
-    const resultsAll = await Result.findAll({
+    const resultsAll = await InapResult.findAll({
       attributes: [
         "id",
         "scoresByArea",

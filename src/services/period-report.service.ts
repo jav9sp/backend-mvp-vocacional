@@ -1,7 +1,7 @@
 import Period from "../models/Period.model.js";
 import Enrollment from "../models/Enrollment.model.js";
 import Attempt from "../models/Attempt.model.js";
-import Result from "../models/Result.model.js";
+import InapResult from "../models/InapResult.model.js";
 import { areaName } from "../utils/inapv-areas.js";
 
 function getCourse(meta: any): string {
@@ -73,7 +73,7 @@ export async function buildPeriodReport(
   );
 
   const results = attemptIds.length
-    ? await Result.findAll({
+    ? await InapResult.findAll({
         where: { attemptId: attemptIds },
         attributes: ["attemptId", "topAreas"],
       })

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Enrollment from "../../models/Enrollment.model.js";
 import User from "../../models/User.model.js";
 import Attempt from "../../models/Attempt.model.js";
-import Result from "../../models/Result.model.js";
+import InapResult from "../../models/InapResult.model.js";
 
 export async function adminListEnrollments(req: Request, res: Response) {
   const { period } = req;
@@ -48,7 +48,7 @@ export async function adminListEnrollments(req: Request, res: Response) {
     (a) => a.id,
   );
   const results = attemptIds.length
-    ? await Result.findAll({
+    ? await InapResult.findAll({
         where: { attemptId: attemptIds },
         attributes: ["attemptId", "topAreas", "createdAt"],
       })

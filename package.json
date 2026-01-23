@@ -8,10 +8,10 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "seed": "tsx scripts/seed.ts",
+    "seed": "tsx src/scripts/seed.ts",
     "seed:reset": "npm run seed -- --reset",
-    "db:alter": "tsx --env-file .env scripts/alter.ts",
-    "structure": "node --loader ts-node/esm scripts/generate-structure.ts",
+    "db:alter": "tsx --env-file .env src/scripts/alter.ts",
+    "structure": "node --loader ts-node/esm src/scripts/generate-structure.ts",
     "analyze:md": "node --loader ts-node/esm src/scripts/analyze-report.ts",
     "map:functions": "node --loader ts-node/esm src/scripts/function-map.ts"
   },

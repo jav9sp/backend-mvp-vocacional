@@ -4,7 +4,7 @@ import { sequelize } from "../../config/sequelize.js";
 
 import Answer from "../../models/Answer.model.js";
 import Question from "../../models/Question.model.js";
-import Result from "../../models/Result.model.js";
+import InapResult from "../../models/InapResult.model.js";
 
 import { INAPV_AREAS } from "../../data/inapv.data.js";
 import { computeInapvScores } from "../../services/scoring.service.js";
@@ -217,11 +217,9 @@ export async function finishAttempt(
   try {
     const { attempt } = req;
     if (!attempt) {
-      return res.status(500).json({ ok: false, error: "Period not loaded" });
+      return res.status(500).json({ ok: false, error: "Attempt not loaded" });
     }
 
-    // (Opcional pero recomendado) org-scope vía Period
-    // Si prefieres no hacerlo aquí, puedes quitar este bloque.
     const period = await Period.findByPk(attempt.periodId, {
       attributes: ["id", "organizationId"],
     });
@@ -234,13 +232,14 @@ export async function finishAttempt(
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
-    // ✅ Idempotencia: si ya está finished, devuelve el result existente con el MISMO shape que GET /attempts/:id/result
+    // ✅ Idempotencia: si ya está finished, devuelve result existente (mismo shape)
     if (attempt.status === "finished") {
-      const existingResult = await Result.findOne({
+      const existingResult = await InapResult.findOne({
         where: { attemptId: attempt.id },
         attributes: [
-          "scoresByArea",
           "scoresByAreaDim",
+          "maxByAreaDim",
+          "percentByAreaDim",
           "topAreas",
           "createdAt",
         ],
@@ -256,8 +255,9 @@ export async function finishAttempt(
             finishedAt: attempt.finishedAt,
           },
           result: {
-            scoresByArea: existingResult.scoresByArea,
             scoresByAreaDim: existingResult.scoresByAreaDim,
+            maxByAreaDim: existingResult.maxByAreaDim,
+            percentByAreaDim: existingResult.percentByAreaDim,
             topAreas: existingResult.topAreas,
             createdAt: existingResult.createdAt,
           },
@@ -309,23 +309,25 @@ export async function finishAttempt(
       })),
     });
 
-    // Guardar Result + finalizar Attempt en transacción
+    // Guardar InapResult + finalizar Attempt en transacción
     try {
       await sequelize.transaction(async (t) => {
-        const [result, created] = await Result.findOrCreate({
+        const [result, created] = await InapResult.findOrCreate({
           where: { attemptId: attempt.id },
           defaults: {
             attemptId: attempt.id,
-            scoresByArea: computed.scoresByArea,
             scoresByAreaDim: computed.scoresByAreaDim,
+            maxByAreaDim: computed.maxByAreaDim,
+            percentByAreaDim: computed.percentByAreaDim,
             topAreas: computed.topAreas,
           },
           transaction: t,
         });
 
         if (!created) {
-          result.scoresByArea = computed.scoresByArea;
           result.scoresByAreaDim = computed.scoresByAreaDim;
+          result.maxByAreaDim = computed.maxByAreaDim;
+          result.percentByAreaDim = computed.percentByAreaDim;
           result.topAreas = computed.topAreas;
           await result.save({ transaction: t });
         }
@@ -347,10 +349,16 @@ export async function finishAttempt(
       });
     }
 
-    // Para devolver createdAt real y un shape consistente, leemos el result persistido
-    const savedResult = await Result.findOne({
+    // Para devolver createdAt real y shape consistente, lee el result persistido
+    const savedResult = await InapResult.findOne({
       where: { attemptId: attempt.id },
-      attributes: ["scoresByArea", "scoresByAreaDim", "topAreas", "createdAt"],
+      attributes: [
+        "scoresByAreaDim",
+        "maxByAreaDim",
+        "percentByAreaDim",
+        "topAreas",
+        "createdAt",
+      ],
     });
 
     if (!savedResult) {
@@ -373,8 +381,9 @@ export async function finishAttempt(
         finishedAt: attempt.finishedAt,
       },
       result: {
-        scoresByArea: savedResult.scoresByArea,
         scoresByAreaDim: savedResult.scoresByAreaDim,
+        maxByAreaDim: savedResult.maxByAreaDim,
+        percentByAreaDim: savedResult.percentByAreaDim,
         topAreas: savedResult.topAreas,
         createdAt: savedResult.createdAt,
       },
@@ -392,7 +401,7 @@ export async function getAttemptResult(
   try {
     const { attempt } = req;
     if (!attempt) {
-      return res.status(500).json({ ok: false, error: "Period not loaded" });
+      return res.status(500).json({ ok: false, error: "Attempt not loaded" });
     }
 
     // Si no terminó, devuelve progreso
@@ -409,9 +418,15 @@ export async function getAttemptResult(
     }
 
     // Buscar result persistido
-    const result = await Result.findOne({
+    const result = await InapResult.findOne({
       where: { attemptId: attempt.id },
-      attributes: ["scoresByArea", "scoresByAreaDim", "topAreas", "createdAt"],
+      attributes: [
+        "scoresByAreaDim",
+        "maxByArea",
+        "percentByArea",
+        "topAreas",
+        "createdAt",
+      ],
     });
 
     if (!result) {
@@ -431,8 +446,9 @@ export async function getAttemptResult(
         finishedAt: attempt.finishedAt,
       },
       result: {
-        scoresByArea: result.scoresByArea,
         scoresByAreaDim: result.scoresByAreaDim,
+        maxByArea: result.maxByAreaDim,
+        percentByArea: result.percentByAreaDim,
         topAreas: result.topAreas,
         createdAt: result.createdAt,
       },

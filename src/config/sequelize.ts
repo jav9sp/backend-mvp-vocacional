@@ -6,7 +6,7 @@ import Test from "../models/Test.model.js";
 import Question from "../models/Question.model.js";
 import Attempt from "../models/Attempt.model.js";
 import Answer from "../models/Answer.model.js";
-import Result from "../models/Result.model.js";
+import InapResult from "../models/InapResult.model.js";
 import Organization from "../models/Organization.model.js";
 import Period from "../models/Period.model.js";
 import Enrollment from "../models/Enrollment.model.js";
@@ -21,7 +21,7 @@ export const sequelize = new Sequelize(process.env.POSTGRES_URL, {
     Question,
     Attempt,
     Answer,
-    Result,
+    InapResult,
     Organization,
     Period,
     Enrollment,
