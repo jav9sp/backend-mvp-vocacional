@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getResultDetails,
+  getResultPdf,
   listStudentResults,
 } from "../../controllers/student/student.results.controller.js";
 
@@ -34,5 +35,7 @@ const router = Router();
 router.get("/", listStudentResults);
 
 router.get("/:resultsId/details", getResultDetails);
+
+router.get("/:resultsId/pdf", getResultPdf);
 
 export default router;
