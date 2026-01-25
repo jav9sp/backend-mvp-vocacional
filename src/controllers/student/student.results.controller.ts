@@ -6,7 +6,7 @@ import InapResult from "../../models/InapResult.model.js";
 import Test from "../../models/Test.model.js";
 import User from "../../models/User.model.js";
 
-import { generateInapvPdfBuffer } from "../../services/generateInapvPdfBuffer.js";
+import { generateInapvPdfBuffer } from "../../services/generateInapvPdfBuffer.service.js";
 import { InapvReportData } from "../../reports/inapv/renderInapvReportHtml.js";
 import { recommendCareers } from "../../utils/recommendCareers.js";
 import {

@@ -19,7 +19,20 @@ import InapResult from "./InapResult.model.js";
 
 export type AttemptStatus = "in_progress" | "finished";
 
-@Table({ tableName: "attempts", timestamps: true })
+@Table({
+  tableName: "attempts",
+  timestamps: true,
+  indexes: [
+    { name: "idx_attempts_user", fields: ["userId"] },
+    { name: "idx_attempts_period", fields: ["periodId"] },
+    { name: "idx_attempts_test", fields: ["testId"] },
+    {
+      name: "uniq_attempts_period_user",
+      unique: true,
+      fields: ["periodId", "userId"],
+    },
+  ],
+})
 class Attempt extends Model {
   @PrimaryKey
   @AutoIncrement

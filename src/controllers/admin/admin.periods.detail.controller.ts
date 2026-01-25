@@ -5,19 +5,31 @@ import Attempt from "../../models/Attempt.model.js";
 import User from "../../models/User.model.js";
 
 export async function getPeriodSummary(req: Request, res: Response) {
-  const { period } = req;
+  const { period } = req as any;
   if (!period) {
     return res.status(500).json({ ok: false, error: "Period not loaded" });
   }
 
-  const studentsCount = await Enrollment.count({ where: { id: period.id } });
+  const periodId = period.id;
+
+  const studentsCount = await Enrollment.count({ where: { periodId } });
 
   const agg = await Attempt.findOne({
-    where: { id: period.id },
+    where: { periodId },
     attributes: [
-      [fn("COUNT", col("id")), "startedCount"],
+      // COUNT DISTINCT userId (alumnos que empezaron)
+      [fn("COUNT", fn("DISTINCT", col("userId"))), "startedCount"],
+      // COUNT DISTINCT userId donde finished
       [
-        fn("SUM", literal(`CASE WHEN status = 'finished' THEN 1 ELSE 0 END`)),
+        fn(
+          "COUNT",
+          fn(
+            "DISTINCT",
+            literal(
+              `CASE WHEN status = 'finished' THEN "userId" ELSE NULL END`,
+            ),
+          ),
+        ),
         "finishedCount",
       ],
     ],

@@ -1,4 +1,5 @@
 import { INAPV_AREA_COLORS, INAPV_AREAS } from "../../data/inapv.data.js";
+import { escapeHtml } from "../../utils/scapeHtml.js";
 
 type AreaKey =
   | "adm"
@@ -44,15 +45,6 @@ export type InapvReportData = {
   finalConsiderations: string;
   logoDataUri?: string | null; // opcional
 };
-
-function escapeHtml(s: string) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
 
 const INAPV_AREAS_MAP = Object.fromEntries(
   INAPV_AREAS.map((area) => [area.key, area]),

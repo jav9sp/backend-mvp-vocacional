@@ -11,6 +11,8 @@ const router = Router();
 
 router.get("/", adminGetStudents);
 
+// TODO: Agregar endpoint para subir estudiantes desde la vista de estudiantes
+
 router.use("/:studentId", requiereStudent);
 
 router.get("/:studentId", adminGetStudentDetail);
