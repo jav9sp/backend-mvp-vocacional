@@ -38,13 +38,4 @@ router.get("/:periodId/results", adminGetPeriodResults);
 
 router.get("/:periodId/results/pdf", adminGetPeriodResultsPdf);
 
-// * Deprecated: no se exporta a csv, solo reporte pdf
-// router.get("/:periodId/export/csv", adminExportPeriodCSV);
-// router.get("/:periodId/report/pdf", adminGetPeriodReportPdf);
-
-// * Deprecated: reemplazados por /:periodId/dashboard
-// router.get("/:periodId/enrollments", adminListEnrollments);
-// router.get("/:periodId/summary", getPeriodSummary);
-// router.get("/:periodId/students", getPeriodStudents);
-
 export default router;
