@@ -14,11 +14,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      process.env.WEB_URL,
-      process.env.WEB_APP_URL,
-      process.env.WEB_APP_URL_DEV,
-    ],
+    origin: [process.env.WEB_DEV, process.env.WEB_APP],
     credentials: true,
   }),
 );
