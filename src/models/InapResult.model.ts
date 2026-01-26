@@ -14,13 +14,13 @@ import {
 import Attempt from "./Attempt.model.js";
 
 @Table({
-  tableName: "results",
+  tableName: "inap_results",
   timestamps: true,
   indexes: [
-    { name: "uniq_result_attempt", unique: true, fields: ["attemptId"] },
+    { name: "uniq_inap_result_attempt", unique: true, fields: ["attemptId"] },
   ],
 })
-class Result extends Model {
+class InapResult extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
@@ -29,7 +29,7 @@ class Result extends Model {
   @ForeignKey(() => Attempt)
   @Unique
   @AllowNull(false)
-  @Index("idx_results_attempt")
+  @Index("idx_inap_results_attempt")
   @Column(DataType.INTEGER)
   declare attemptId: number;
 
@@ -37,19 +37,29 @@ class Result extends Model {
   declare attempt?: Attempt;
 
   @AllowNull(false)
-  @Column(DataType.JSON)
-  declare scoresByArea: Record<string, number>;
-
-  @AllowNull(false)
-  @Column(DataType.JSON)
+  @Column(DataType.JSONB)
   declare scoresByAreaDim: Record<
     string,
     { interes: number; aptitud: number; total: number }
   >;
 
   @AllowNull(false)
-  @Column(DataType.JSON)
+  @Column(DataType.JSONB)
+  declare maxByAreaDim: Record<
+    string,
+    { interes: number; aptitud: number; total: number }
+  >;
+
+  @AllowNull(false)
+  @Column(DataType.JSONB)
+  declare percentByAreaDim: Record<
+    string,
+    { interes: number; aptitud: number; total: number }
+  >;
+
+  @AllowNull(false)
+  @Column(DataType.JSONB)
   declare topAreas: string[];
 }
 
-export default Result;
+export default InapResult;

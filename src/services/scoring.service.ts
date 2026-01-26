@@ -1,57 +1,83 @@
-type ScoresByArea = Record<string, number>;
 type ScoresByAreaDim = Record<
   string,
   { interes: number; aptitud: number; total: number }
 >;
 
+type MaxByAreaDim = Record<
+  string,
+  { interes: number; aptitud: number; total: number }
+>;
+
+type PercentByAreaDim = Record<
+  string,
+  { interes: number; aptitud: number; total: number }
+>;
+
 export function computeInapvScores(args: {
-  // questionId -> { area, dim[] }
   questionsById: Map<number, { area: string; dim: string[] }>;
-  // list of answers with questionId + value
   answers: Array<{ questionId: number; value: boolean }>;
 }) {
   const { questionsById, answers } = args;
 
-  const scoresByArea: ScoresByArea = {};
   const scoresByAreaDim: ScoresByAreaDim = {};
+  const maxByAreaDim: MaxByAreaDim = {};
 
   const ensureArea = (area: string) => {
-    if (scoresByArea[area] == null) scoresByArea[area] = 0;
     if (!scoresByAreaDim[area]) {
       scoresByAreaDim[area] = { interes: 0, aptitud: 0, total: 0 };
     }
+    if (!maxByAreaDim[area]) {
+      maxByAreaDim[area] = { interes: 0, aptitud: 0, total: 0 };
+    }
   };
 
-  for (const a of answers) {
-    if (!a.value) continue; // NO suma
+  // 1) Precalcular máximos posibles por área y por dimensión
+  for (const q of questionsById.values()) {
+    const { area, dim: dims } = q;
+    ensureArea(area);
 
-    const q = questionsById.get(a.questionId);
-    if (!q) continue; // por seguridad, no debería pasar
+    const maxI = dims.includes("interes") ? 1 : 0;
+    const maxA = dims.includes("aptitud") ? 1 : 0;
 
-    ensureArea(q.area);
-
-    scoresByArea[q.area] += 1;
-
-    const dims = q.dim;
-    if (dims.includes("interes")) scoresByAreaDim[q.area].interes += 1;
-    if (dims.includes("aptitud")) scoresByAreaDim[q.area].aptitud += 1;
-
-    scoresByAreaDim[q.area].total =
-      scoresByAreaDim[q.area].interes + scoresByAreaDim[q.area].aptitud;
+    maxByAreaDim[area].interes += maxI;
+    maxByAreaDim[area].aptitud += maxA;
+    maxByAreaDim[area].total += maxI + maxA;
   }
 
-  // Asegura que total exista aunque no haya dims (por si acaso)
-  for (const area of Object.keys(scoresByArea)) {
+  // 2) Sumar puntajes efectivos según respuestas "sí"
+  for (const { questionId, value } of answers) {
+    if (!value) continue;
+
+    const question = questionsById.get(questionId);
+    if (!question) continue;
+
+    const { area, dim: dims } = question;
     ensureArea(area);
+
+    if (dims.includes("interes")) scoresByAreaDim[area].interes += 1;
+    if (dims.includes("aptitud")) scoresByAreaDim[area].aptitud += 1;
+
     scoresByAreaDim[area].total =
       scoresByAreaDim[area].interes + scoresByAreaDim[area].aptitud;
   }
 
-  // Top 3 con desempate estable:
-  // 1) total desc
-  // 2) interes desc
-  // 3) aptitud desc
-  // 4) areaKey asc
+  // 3) Porcentajes (0..100) por área, calculados por dimensión con su propio máximo
+  const percentByAreaDim: PercentByAreaDim = {};
+  for (const area of Object.keys(scoresByAreaDim)) {
+    const s = scoresByAreaDim[area];
+    const m = maxByAreaDim[area] ?? { interes: 0, aptitud: 0, total: 0 };
+
+    const toPct = (v: number, max: number) => (max === 0 ? 0 : (v / max) * 100);
+
+    percentByAreaDim[area] = {
+      interes: toPct(s.interes, m.interes),
+      aptitud: toPct(s.aptitud, m.aptitud),
+      // "total" opcional: porcentaje sobre el total posible del área
+      total: toPct(s.total, m.total),
+    };
+  }
+
+  // 4) Top 3 (si el ranking debe basarse en TOTAL en puntos, dejamos esto igual)
   const topAreas = Object.keys(scoresByAreaDim)
     .sort((a, b) => {
       const A = scoresByAreaDim[a];
@@ -64,5 +90,5 @@ export function computeInapvScores(args: {
     })
     .slice(0, 3);
 
-  return { scoresByArea, scoresByAreaDim, topAreas };
+  return { scoresByAreaDim, maxByAreaDim, percentByAreaDim, topAreas };
 }

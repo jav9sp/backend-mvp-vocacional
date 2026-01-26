@@ -13,6 +13,19 @@ export const INAPV_AREAS: InapArea[] = [
   { key: "tec", name: "Tecnologías de la Información y Comunicación" },
 ];
 
+export const INAPV_AREA_COLORS: Record<string, string> = {
+  adm: "#C43C3C", // rojo sobrio – gestión / derecho
+  agr: "#7FB069", // verde natural – agricultura
+  art: "#C02E8A", // magenta – artes / humanidades
+  csn: "#6B5CA5", // violeta azulado – ciencias
+  soc: "#4A90A4", // azul verdoso – sociales / periodismo
+  edu: "#F2A541", // ámbar – educación
+  ing: "#4C78A8", // azul técnico – ingeniería
+  sal: "#59A14F", // verde salud – bienestar
+  seg: "#9C755F", // marrón/gris – servicios / seguridad
+  tec: "#E15759", // rojo tecnológico – TIC
+};
+
 export const INAPV_QUESTIONS: InapQuestion[] = [
   {
     id: 1,
