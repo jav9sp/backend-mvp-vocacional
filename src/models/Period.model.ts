@@ -68,7 +68,7 @@ class Period extends Model {
   declare organization?: Organization;
 
   @BelongsTo(() => Test, { foreignKey: "testId", as: "test" })
-  declare test?: Test;
+  declare test?: any;
 }
 
 export default Period;
