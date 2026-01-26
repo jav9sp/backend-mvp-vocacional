@@ -66,7 +66,7 @@ class User extends Model {
   declare organization?: Organization;
 
   @HasMany(() => Enrollment, { foreignKey: "studentUserId", as: "enrollments" })
-  declare enrollments?: Enrollment[];
+  declare enrollments?: any[];
 }
 
 export default User;

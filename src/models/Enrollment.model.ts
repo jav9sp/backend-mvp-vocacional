@@ -56,7 +56,7 @@ class Enrollment extends Model {
   declare period?: Period;
 
   @BelongsTo(() => User, { foreignKey: "studentUserId", as: "student" })
-  declare student?: User;
+  declare student?: any;
 }
 
 export default Enrollment;

@@ -4,7 +4,6 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
@@ -16,7 +15,7 @@
     "map:functions": "node --loader ts-node/esm src/scripts/function-map.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "Francisco Fuentes Campos",
   "license": "ISC",
   "type": "module",
   "dependencies": {
