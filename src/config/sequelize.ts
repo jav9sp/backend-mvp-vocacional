@@ -1,6 +1,8 @@
+import colors from "colors";
+
 import { Sequelize } from "sequelize-typescript";
 import dotenv from "dotenv";
-import colors from "colors";
+
 import User from "../models/User.model.js";
 import Test from "../models/Test.model.js";
 import Question from "../models/Question.model.js";
@@ -10,14 +12,27 @@ import InapResult from "../models/InapResult.model.js";
 import Organization from "../models/Organization.model.js";
 import Period from "../models/Period.model.js";
 import Enrollment from "../models/Enrollment.model.js";
+import StudentProfile from "../models/StudentProfile.model.js";
+import NemConversion from "../models/NemConversion.model.js";
+import PaesScoreRecord from "../models/PaesScoreRecord.model.js";
 
 dotenv.config();
 
-export const sequelize = new Sequelize(process.env.DATABASE_URL, {
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error("DATABASE_URL not found");
+const isProd = process.env.NODE_ENV === "production";
+
+export const sequelize = new Sequelize(databaseUrl, {
   dialect: "postgres",
-  dialectOptions: {
-    ssl: { require: true, rejectUnauthorized: false },
-  },
+  logging: false,
+  dialectOptions: isProd
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }
+    : undefined,
   models: [
     User,
     Test,
@@ -28,8 +43,10 @@ export const sequelize = new Sequelize(process.env.DATABASE_URL, {
     Organization,
     Period,
     Enrollment,
+    StudentProfile,
+    NemConversion,
+    PaesScoreRecord,
   ],
-  logging: false,
 });
 
 export async function connectDB() {

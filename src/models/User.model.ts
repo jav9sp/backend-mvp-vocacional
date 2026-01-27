@@ -12,9 +12,11 @@ import {
   Index,
   HasMany,
   BelongsTo,
+  HasOne,
 } from "sequelize-typescript";
 import Enrollment from "./Enrollment.model.js";
 import Organization from "./Organization.model.js";
+import StudentProfile from "./StudentProfile.model.js";
 
 export type UserRole = "admin" | "student";
 
@@ -67,6 +69,12 @@ class User extends Model {
 
   @HasMany(() => Enrollment, { foreignKey: "studentUserId", as: "enrollments" })
   declare enrollments?: any[];
+
+  @HasOne(() => StudentProfile, {
+    foreignKey: "userId",
+    as: "studentProfile",
+  })
+  declare studentProfile?: any;
 }
 
 export default User;

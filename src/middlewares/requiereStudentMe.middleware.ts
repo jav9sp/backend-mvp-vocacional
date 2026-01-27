@@ -26,6 +26,7 @@ export async function requireStudentMe(
       "rut",
       "name",
       "email",
+      "role",
       "passwordHash",
       "mustChangePassword",
     ],

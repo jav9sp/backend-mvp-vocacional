@@ -1,10 +1,11 @@
+import "./config/env.js";
+import "reflect-metadata";
+
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
-import "reflect-metadata";
-import { sequelize, connectDB } from "./config/sequelize.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
+import { sequelize, connectDB } from "./config/sequelize.js";
 
 import authRoutes from "./routes/auth/auth.routes.js";
 import adminRoutes from "./routes/admin/admin.routes.js";
@@ -12,9 +13,11 @@ import studentRouter from "./routes/student/student.routes.js";
 
 const app = express();
 
+const webApp = process.env.WEB_APP;
+
 app.use(
   cors({
-    origin: [process.env.WEB_DEV, process.env.WEB_APP],
+    origin: webApp ? [webApp] : true,
     credentials: true,
   }),
 );

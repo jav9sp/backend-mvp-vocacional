@@ -4,5 +4,6 @@ export type SafeUser = {
   organizationId: number;
   name: string;
   email: string;
+  role: string;
   mustChangePassword: boolean;
 };

@@ -1,200 +1,169 @@
+import "../config/env.js";
 import "reflect-metadata";
-import "dotenv/config";
-import bcrypt from "bcrypt";
+import path from "node:path";
+import xlsx from "xlsx";
 import { sequelize } from "../config/sequelize.js";
 
-// Ajusta estos imports a tus rutas reales:
-import Organization from "../models/Organization.model.js";
-import User from "../models/User.model.js";
-import Period from "../models/Period.model.js";
-import Enrollment from "../models/Enrollment.model.js";
-import Test from "../models/Test.model.js";
-import Question from "../models/Question.model.js";
+import NemConversion from "../models/NemConversion.model.js";
+import { EducationType } from "../types/EducationType.js";
 
-import { INAPV_QUESTIONS } from "../data/inapv.data.js";
-
-type AnyModelStatic = { rawAttributes?: Record<string, any> };
-
-function onlyExistingAttrs<T extends Record<string, any>>(
-  Model: AnyModelStatic,
-  data: T,
-): Partial<T> {
-  const attrs = (Model.rawAttributes && Object.keys(Model.rawAttributes)) || [];
-  const out: Partial<T> = {};
-  for (const k of Object.keys(data)) {
-    if (attrs.includes(k)) (out as any)[k] = data[k];
-  }
-  return out;
+function argValue(name: string): string | undefined {
+  const i = process.argv.indexOf(name);
+  if (i === -1) return undefined;
+  return process.argv[i + 1];
 }
 
 function argFlag(name: string) {
   return process.argv.includes(name);
 }
 
+function normalizeNemAvg(v: unknown): string {
+  const n = Number(String(v).trim().replace(",", "."));
+  if (!Number.isFinite(n)) throw new Error(`NEM inválido: ${v}`);
+  return n.toFixed(2); // exacto a 2 decimales
+}
+
+function toInt(v: unknown, label: string): number {
+  const n = Number(String(v).trim());
+  if (!Number.isFinite(n)) throw new Error(`${label} inválido: ${v}`);
+  return Math.round(n);
+}
+
 async function main() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("🚨 No se permite ejecutar seed en producción");
+  }
+
+  const url = process.env.DATABASE_URL ?? "";
+  if (!url.includes("localhost") && !url.includes("127.0.0.1")) {
+    throw new Error("🚨 Seed bloqueado: DB no es local");
+  }
+
   const reset =
     argFlag("--reset") ||
     process.env.SEED_RESET === "1" ||
     process.env.SEED_RESET === "true";
 
-  const orgName = process.env.SEED_ORG_NAME || "Colegio Test";
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@test.com";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Admin1234!";
-  const studentCount = Number(process.env.SEED_STUDENTS || 10);
+  const wipe =
+    argFlag("--wipe") ||
+    process.env.SEED_WIPE === "1" ||
+    process.env.SEED_WIPE === "true" ||
+    true; // por defecto: wipe por año para que sea idempotente
 
-  console.log("🌱 Seed starting…");
+  const yearArg = argValue("--year") ?? process.env.SEED_NEM_YEAR;
+  const year = yearArg ? Number(yearArg) : new Date().getFullYear();
+  if (!Number.isFinite(year)) {
+    throw new Error(
+      `YEAR inválido. Usa: --year 2026 o SEED_NEM_YEAR=2026 (recibí: ${yearArg})`,
+    );
+  }
+
+  const excelPath =
+    argValue("--file") ??
+    process.env.SEED_NEM_FILE ??
+    path.resolve(process.cwd(), "nem_conversion.xlsx");
+
+  console.log("🌱 Seed NEM conversions starting…");
   console.log("   reset:", reset);
-  console.log("   org:", orgName);
-  console.log("   admin:", adminEmail);
-  console.log("   students:", studentCount);
+  console.log("   wipe year:", wipe);
+  console.log("   year:", year);
+  console.log("   file:", excelPath);
 
   await sequelize.authenticate();
 
+  // Ojo: sync no es necesario si ya corres migraciones,
+  // pero te lo dejo igual al estilo de tu seed existente.
   if (reset) {
     await sequelize.sync({ force: true });
   } else {
     await sequelize.sync();
   }
 
-  // 1) Organization
-  const [org] = await Organization.findOrCreate({
-    where: onlyExistingAttrs(Organization as any, { name: orgName }) as any,
-    defaults: onlyExistingAttrs(Organization as any, { name: orgName }) as any,
-  });
+  // Leer excel
+  const wb = xlsx.readFile(excelPath);
+  const firstSheetName = wb.SheetNames[0];
+  if (!firstSheetName) throw new Error("El Excel no tiene hojas.");
+  const ws = wb.Sheets[firstSheetName];
+  if (!ws) throw new Error("No se pudo leer la primera hoja.");
 
-  // 2) Test INAP-V
-  await Test.update({ isActive: false }, { where: {} });
+  const rows = xlsx.utils.sheet_to_json<any>(ws, { defval: "" });
 
-  const [test] = await Test.findOrCreate({
-    where: { key: "inapv", version: "v1" },
-    defaults: {
-      key: "inapv",
-      version: "v1",
-      name: "INAP-V",
-      isActive: true,
-    },
-  });
-
-  if (!test.isActive) {
-    test.isActive = true;
-    await test.save();
+  if (rows.length === 0) {
+    throw new Error("El Excel está vacío (0 filas).");
   }
 
-  // Preparar preguntas para bulkCreate
-  const rows = INAPV_QUESTIONS.map((q) => ({
-    testId: test.id,
-    externalId: q.id, // 1..103
-    text: q.text,
-    area: q.area,
-    dim: q.dim, // JSON array
-    orderIndex: q.id, // mismo orden
-  }));
-
-  // Insertar / actualizar si existen
-  // Requiere el índice único (testId, externalId)
-  await Question.bulkCreate(rows, {
-    updateOnDuplicate: ["text", "area", "dim", "orderIndex"],
-  });
-
-  // 3) Admin
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
-  const [admin, adminCreated] = await User.findOrCreate({
-    where: onlyExistingAttrs(User as any, { email: adminEmail }) as any,
-    defaults: onlyExistingAttrs(User as any, {
-      organizationId: (org as any).id,
-      email: adminEmail,
-      name: "Admin",
-      rut: "12345678-9",
-      role: "admin",
-      passwordHash,
-      mustChangePassword: false,
-    }) as any,
-  });
-
-  // Si el admin existía, asegúrate que esté en la org y tenga pass (opcional)
-  if (!adminCreated) {
-    const patch = onlyExistingAttrs(User as any, {
-      organizationId: (org as any).id,
-      role: "admin",
-    });
-    await (admin as any).update(patch);
+  // Validación headers (toma primera fila)
+  const sample = rows[0] ?? {};
+  const required = ["NEM", "HC", "HC_AD", "TP"];
+  const missing = required.filter((k) => !(k in sample));
+  if (missing.length) {
+    throw new Error(
+      `Faltan columnas: ${missing.join(", ")}. Headers detectados: ${Object.keys(sample).join(", ")}`,
+    );
   }
 
-  // 4) Period (activo)
-  const periodName = process.env.SEED_PERIOD_NAME || "Periodo Test 1";
-  const [period] = await Period.findOrCreate({
-    where: onlyExistingAttrs(Period as any, {
-      organizationId: (org as any).id,
-      name: periodName,
-    }) as any,
-    defaults: onlyExistingAttrs(Period as any, {
-      organizationId: (org as any).id,
-      name: periodName,
-      status: "active",
-      startAt: Date.now(),
-      testId: (test as any).id,
-    }) as any,
-  });
+  // Construir payload normalizado
+  const now = new Date();
+  const payload: Array<{
+    year: number;
+    educationType: EducationType;
+    nemAvg: string;
+    nemScore: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
 
-  // 5) Students
-  const studentPassword = process.env.SEED_STUDENT_PASSWORD || "estudiante123";
-  const studentHash = await bcrypt.hash(studentPassword, 10);
+  for (const r of rows) {
+    // Saltar filas vacías (por si hay líneas al final)
+    if (String(r.NEM ?? "").trim() === "") continue;
 
-  const students: any[] = [];
-  for (let i = 1; i <= studentCount; i++) {
-    const email = `estudiante${i}@test.com`;
-    const rut = `${10000000 + i}-0`; // rut demo
-    const [student] = await User.findOrCreate({
-      where: onlyExistingAttrs(User as any, { email }) as any,
-      defaults: onlyExistingAttrs(User as any, {
-        organizationId: (org as any).id,
-        email,
-        name: `Estudiante ${i}`,
-        rut,
-        role: "student",
-        passwordHash: studentHash,
-        mustChangePassword: false,
-      }) as any,
-    });
-    students.push(student);
+    const nemAvg = normalizeNemAvg(r.NEM);
+
+    payload.push(
+      {
+        year,
+        educationType: "hc",
+        nemAvg,
+        nemScore: toInt(r.HC, "HC"),
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        year,
+        educationType: "hc_adults",
+        nemAvg,
+        nemScore: toInt(r.HC_AD, "HC_AD"),
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        year,
+        educationType: "tp",
+        nemAvg,
+        nemScore: toInt(r.TP, "TP"),
+        createdAt: now,
+        updatedAt: now,
+      },
+    );
   }
 
-  // 6) Enrollments (uno por student)
-  // Evita IN (NULL) y dupes
-  const studentIds = students.map((s) => (s as any).id).filter(Boolean);
-
-  // Si quieres, puedes borrar enrollments previos del periodo cuando NO haces reset:
-  // await Enrollment.destroy({ where: { periodId: (period as any).id } });
-
-  let createdEnrollments = 0;
-  for (const studentId of studentIds) {
-    const [enr, wasCreated] = await Enrollment.findOrCreate({
-      where: onlyExistingAttrs(Enrollment as any, {
-        periodId: (period as any).id,
-        studentUserId: studentId,
-      }) as any,
-      defaults: onlyExistingAttrs(Enrollment as any, {
-        periodId: (period as any).id,
-        studentUserId: studentId,
-        status: "active",
-        meta: null,
-      }) as any,
-    });
-    if (wasCreated) createdEnrollments++;
+  if (payload.length === 0) {
+    throw new Error("No se generaron filas para insertar (payload vacío).");
   }
 
-  console.log("✅ Seed completed!");
-  console.log("   Organization:", (org as any).id, (org as any).name);
-  console.log(
-    "   Test:",
-    (test as any).id,
-    (test as any).key,
-    (test as any).version,
-  );
-  console.log("   Period:", (period as any).id, (period as any).name);
-  console.log("   Admin:", (admin as any).email, "| password:", adminPassword);
-  console.log("   Student password:", studentPassword);
-  console.log("   Enrollments created:", createdEnrollments);
+  if (wipe) {
+    const deleted = await NemConversion.destroy({ where: { year } });
+    console.log(`   deleted rows (year=${year}):`, deleted);
+  }
+
+  // Insertar
+  // Para Postgres, bulkCreate sin updateOnDuplicate.
+  // Como borramos por año antes, queda idempotente.
+  await NemConversion.bulkCreate(payload as any, { validate: true });
+
+  console.log("✅ Seed NEM conversions completed!");
+  console.log("   sheet:", firstSheetName);
+  console.log("   inserted:", payload.length);
 
   await sequelize.close();
 }

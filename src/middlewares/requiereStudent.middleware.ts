@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import User from "../models/User.model.js";
 import { SafeUser } from "../types/dtos.js";
 
-const SAFE_ATTRS = ["id", "rut", "name", "email"] as const;
+const SAFE_ATTRS = ["id", "rut", "name", "email", "role"] as const;
 
 export async function requiereStudent(
   req: Request,
@@ -19,7 +19,6 @@ export async function requiereStudent(
 
   const user = await User.findOne({
     where: { id, role: "student", organizationId: orgId },
-    // trae lo mínimo + lo que necesitas internamente
     attributes: [...SAFE_ATTRS, "passwordHash", "mustChangePassword"], // o incluso sin estos si no los usas
   });
 

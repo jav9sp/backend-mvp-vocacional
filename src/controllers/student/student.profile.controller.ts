@@ -1,36 +1,98 @@
 import { Request, Response, NextFunction } from "express";
-import User from "../../models/User.model.js";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 
+import User from "../../models/User.model.js";
+import StudentProfile from "../../models/StudentProfile.model.js";
+import NemConversion from "../../models/NemConversion.model.js";
+
+import { normalizeEducationType } from "../../utils/normalizeEducationType.js";
+
+import { EducationType } from "../../types/EducationType.js";
+
+const EducationTypeInputSchema = z.enum(["hc", "hc_adults", "tp"]);
+
 const UpdateMyProfileBodySchema = z.object({
-  name: z.string().trim().min(2).max(120).optional(),
-  email: z.email("Email inválido").max(180).optional(),
+  name: z.string().min(2).max(120).optional(),
+  email: z.email().max(180).optional(),
+  educationType: EducationTypeInputSchema.optional(),
+  nemAvg: z.number().min(4.0).max(7.0).optional(),
+  nemYear: z.number().int().min(2000).max(2100).optional(),
 });
 
-export function getMyProfile(req: Request, res: Response, next: NextFunction) {
+export async function getMyProfile(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const user = req.userModel;
     if (!user) {
       return res.status(500).json({ ok: false, error: "User not loaded" });
     }
 
+    let studentProfile: any = null;
+
+    const sp = await StudentProfile.findOne({ where: { userId: user.id } });
+    studentProfile = sp
+      ? {
+          userId: sp.userId,
+          educationType: sp.educationType,
+          nemAvg: sp.nemAvg,
+          nemYear: sp.nemYear,
+          nemScore: sp.nemScore,
+          rankingScore: sp.rankingScore,
+        }
+      : null;
+
     return res.json({
       ok: true,
+      _debug: "getMyProfile v2",
       user: {
         id: user.id,
         rut: user.rut,
         name: user.name,
         email: user.email,
         mustChangePassword: user.mustChangePassword,
+        role: user.role,
       },
       organization: {
         id: req.auth!.organizationId,
       },
+      studentProfile,
     });
   } catch (error) {
     return next(error);
   }
+}
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
+
+async function resolveNemScore(params: {
+  year: number;
+  educationType: EducationType; // hc | hc_adults | tp
+  nemAvg: number; // 4.00 - 7.00
+}) {
+  const nemAvgStr = round2(params.nemAvg).toFixed(2);
+
+  const row = await NemConversion.findOne({
+    where: {
+      year: params.year,
+      educationType: params.educationType,
+      nemAvg: nemAvgStr,
+    },
+  });
+
+  if (!row) {
+    const msg = `No existe conversión NEM para year=${params.year}, educationType=${params.educationType}, nemAvg=${nemAvgStr}`;
+    const err = new Error(msg);
+    (err as any).status = 400;
+    throw err;
+  }
+
+  return { nemAvgStr, nemScore: row.nemScore, rankingScore: row.nemScore };
 }
 
 export async function updateMyProfile(
@@ -39,7 +101,7 @@ export async function updateMyProfile(
   next: NextFunction,
 ) {
   try {
-    const user = req.userModel;
+    const user = (req as any).userModel;
     if (!user) {
       return res.status(500).json({ ok: false, error: "User not loaded" });
     }
@@ -52,16 +114,120 @@ export async function updateMyProfile(
       });
     }
 
-    const { name, email } = parsed.data;
+    const { name, email, educationType, nemAvg, nemYear } = parsed.data;
 
-    if (name === undefined && email === undefined) {
+    const wantsUserUpdate = name !== undefined || email !== undefined;
+    const wantsStudentUpdate =
+      educationType !== undefined ||
+      nemAvg !== undefined ||
+      nemYear !== undefined;
+
+    if (!wantsUserUpdate && !wantsStudentUpdate) {
       return res.status(400).json({ ok: false, error: "No fields to update" });
     }
 
-    if (typeof name === "string") user.name = name;
-    if (typeof email === "string") user.email = email;
+    // 1) Update base user fields
+    if (wantsUserUpdate) {
+      if (typeof name === "string") user.name = name;
+      if (typeof email === "string") user.email = email;
+      await user.save();
+    }
 
-    await user.save();
+    let studentProfilePayload: any = null;
+
+    // 2) Student profile update
+    if (wantsStudentUpdate) {
+      if (user.role !== "student") {
+        return res.status(403).json({
+          ok: false,
+          error: "Only students can update educationType/nem fields",
+        });
+      }
+
+      // Busca perfil existente (NO crees aún)
+      const existing = await StudentProfile.findOne({
+        where: { userId: user.id },
+      });
+
+      // Resolver valores finales usando: body > existing > defaults (solo para año)
+      const finalEducationType =
+        educationType !== undefined
+          ? normalizeEducationType(educationType as any)
+          : existing?.educationType;
+
+      const finalNemAvgNum =
+        nemAvg !== undefined
+          ? round2(nemAvg)
+          : existing
+            ? Number(existing.nemAvg)
+            : undefined;
+
+      const finalNemYear =
+        nemYear !== undefined
+          ? nemYear
+          : (existing?.nemYear ?? new Date().getFullYear());
+
+      // ✅ Regla: para poder calcular (y por ende crear o actualizar),
+      // necesitamos educationType + nemAvg + nemYear (año siempre lo tenemos por default)
+      // Pero educationType y nemAvg deben existir (del body o del perfil existente)
+      const missing: string[] = [];
+      if (!finalEducationType) missing.push("educationType");
+      if (finalNemAvgNum === undefined || Number.isNaN(finalNemAvgNum))
+        missing.push("nemAvg");
+
+      if (missing.length) {
+        return res.status(400).json({
+          ok: false,
+          error: `Faltan campos para calcular NEM: ${missing.join(", ")}`,
+        });
+      }
+
+      // Ahora sí: crea si no existe, o actualiza si existe
+      const profile =
+        existing ??
+        (await StudentProfile.create({
+          userId: user.id,
+          educationType: finalEducationType,
+          nemAvg: finalNemAvgNum.toFixed(2),
+          nemYear: finalNemYear,
+          nemScore: 0,
+          rankingScore: 0,
+        } as any));
+
+      // Recalcular siempre que cambie algo relevante (o si score=0)
+      const needsRecalc =
+        profile.educationType !== finalEducationType ||
+        profile.nemYear !== finalNemYear ||
+        round2(Number(profile.nemAvg)) !== round2(finalNemAvgNum) ||
+        profile.nemScore === 0;
+
+      profile.educationType = finalEducationType;
+      profile.nemYear = finalNemYear;
+      profile.nemAvg = finalNemAvgNum.toFixed(2);
+
+      if (needsRecalc) {
+        const { nemAvgStr, nemScore, rankingScore } = await resolveNemScore({
+          year: finalNemYear,
+          educationType: finalEducationType,
+          nemAvg: finalNemAvgNum,
+        });
+
+        profile.nemAvg = nemAvgStr;
+        profile.nemScore = nemScore;
+        profile.rankingScore = rankingScore; // ranking = nem
+      }
+
+      await profile.save();
+
+      studentProfilePayload = {
+        userId: profile.userId,
+        educationType: profile.educationType,
+        nemAvg: profile.nemAvg,
+        nemYear: profile.nemYear,
+        nemScore: profile.nemScore,
+        rankingScore: profile.rankingScore,
+      };
+    }
 
     return res.json({
       ok: true,
@@ -71,7 +237,9 @@ export async function updateMyProfile(
         name: user.name,
         email: user.email,
         mustChangePassword: user.mustChangePassword,
+        role: user.role,
       },
+      studentProfile: studentProfilePayload, // si no se tocó, queda null
     });
   } catch (error) {
     return next(error);

@@ -4,7 +4,7 @@ import {
   getMyProfile,
   updateMyProfile,
 } from "../../controllers/student/student.profile.controller.js";
-import { requireStudentMe } from "../../middlewares/requiereStudentMe.js";
+import { requireStudentMe } from "../../middlewares/requiereStudentMe.middleware.js";
 
 const router = Router();
 
