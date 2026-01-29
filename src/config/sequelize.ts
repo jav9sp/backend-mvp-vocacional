@@ -16,8 +16,7 @@ import PaesScoreRecord from "../models/PaesScoreRecord.model.js";
 
 dotenv.config();
 
-const databaseUrl = process.env.PROD_DATABASE;
-const databaseName = process.env.PROD_DATABASE;
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) throw new Error("DATABASE_URL not found");
 
@@ -48,7 +47,7 @@ export async function connectDB() {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
-    console.log(`Conectado a la base de datos: ${databaseName}`);
+    console.log(`Conectado a la base de datos: ${databaseUrl}`);
   } catch (error) {
     console.log(error);
     console.log("Error al conectar a la base de datos");
