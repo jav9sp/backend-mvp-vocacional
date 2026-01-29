@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "start": "node dist/index.js",
     "structure": "node --loader ts-node/esm src/scripts/generate-structure.ts",
     "analyze:md": "node --loader ts-node/esm src/scripts/analyze-report.ts",
     "map:functions": "node --loader ts-node/esm src/scripts/function-map.ts",
