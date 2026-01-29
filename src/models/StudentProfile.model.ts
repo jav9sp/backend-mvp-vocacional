@@ -6,7 +6,6 @@ import {
   PrimaryKey,
   ForeignKey,
   AllowNull,
-  Default,
   BelongsTo,
   Index,
 } from "sequelize-typescript";
@@ -22,16 +21,12 @@ export default class StudentProfile extends Model {
 
   @AllowNull(false)
   @Index("idx_student_profiles_education_type")
-  @Column(DataType.ENUM("ch", "ch_adultos", "tp"))
+  @Column(DataType.ENUM("hc", "hc_adults", "tp"))
   declare educationType: EducationType;
 
   @AllowNull(false)
   @Column(DataType.DECIMAL(3, 2))
   declare nemAvg: string;
-
-  @AllowNull(false)
-  @Column(DataType.INTEGER)
-  declare nemYear: number;
 
   @AllowNull(false)
   @Column(DataType.INTEGER)

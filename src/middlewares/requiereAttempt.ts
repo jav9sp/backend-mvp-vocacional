@@ -27,7 +27,6 @@ export async function requiereStudentAttempt(
       "id",
       "userId",
       "periodId",
-      "testId",
       "status",
       "answeredCount",
       "finishedAt",

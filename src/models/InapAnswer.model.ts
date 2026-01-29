@@ -8,22 +8,27 @@ import {
   AllowNull,
   ForeignKey,
   Index,
+  BelongsTo,
 } from "sequelize-typescript";
 import Attempt from "./Attempt.model.js";
-import Question from "./Question.model.js";
+import InapQuestion from "./InapQuestion.model.js";
 
 @Table({
-  tableName: "answers",
+  tableName: "inap_answers",
   timestamps: true,
   indexes: [
     {
-      name: "uniq_attempt_question",
+      name: "uniq_inap_answers_attempt_question",
       unique: true,
       fields: ["attemptId", "questionId"],
     },
+    {
+      name: "idx_inap_answers_attempt",
+      fields: ["attemptId"],
+    },
   ],
 })
-class Answer extends Model {
+class InapAnswer extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
@@ -31,18 +36,24 @@ class Answer extends Model {
 
   @ForeignKey(() => Attempt)
   @AllowNull(false)
-  @Index("idx_answers_attempt")
+  @Index("idx_inap_answers_attempt")
   @Column(DataType.INTEGER)
   declare attemptId: number;
 
-  @ForeignKey(() => Question)
+  @BelongsTo(() => Attempt, { foreignKey: "attemptId", as: "attempt" })
+  declare attempt?: Attempt;
+
+  @ForeignKey(() => InapQuestion)
   @AllowNull(false)
   @Column(DataType.INTEGER)
   declare questionId: number;
+
+  @BelongsTo(() => InapQuestion, { foreignKey: "questionId", as: "question" })
+  declare question?: InapQuestion;
 
   @AllowNull(false)
   @Column(DataType.BOOLEAN)
   declare value: boolean;
 }
 
-export default Answer;
+export default InapAnswer;

@@ -17,7 +17,8 @@ import Attempt from "./Attempt.model.js";
   tableName: "inap_results",
   timestamps: true,
   indexes: [
-    { name: "uniq_inap_result_attempt", unique: true, fields: ["attemptId"] },
+    { name: "uniq_inap_results_attempt", unique: true, fields: ["attemptId"] },
+    { name: "idx_inap_results_attempt", fields: ["attemptId"] },
   ],
 })
 class InapResult extends Model {
@@ -34,7 +35,7 @@ class InapResult extends Model {
   declare attemptId: number;
 
   @BelongsTo(() => Attempt, { foreignKey: "attemptId", as: "attempt" })
-  declare attempt?: any;
+  declare attempt?: Attempt;
 
   @AllowNull(false)
   @Column(DataType.JSONB)

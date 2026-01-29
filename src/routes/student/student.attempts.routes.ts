@@ -264,9 +264,12 @@ const router = Router();
 router.use("/:attemptId", requiereStudentAttempt);
 
 router.get("/:attemptId", getAttemptContext);
+
 router.get("/:attemptId/result", getAttemptResult);
+
 router.get("/:attemptId/answers", getAttemptAnswers);
 router.put("/:attemptId/answers", saveAttemptAnswers);
+
 router.post("/:attemptId/finish", finishAttempt);
 
 export default router;

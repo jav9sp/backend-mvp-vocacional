@@ -169,11 +169,7 @@ export async function getOrCreateAttemptForEnrollment(
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
-    const attempt = await getOrCreateActiveAttempt(
-      userId,
-      period.id,
-      period.testId,
-    );
+    const attempt = await getOrCreateActiveAttempt(userId, period.id);
 
     return res.json({
       ok: true,

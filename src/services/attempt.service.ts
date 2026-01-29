@@ -36,12 +36,10 @@ export async function getActiveEnrollment(
 export async function getOrCreateActiveAttempt(
   userId: User["id"],
   periodId: Period["id"],
-  testId: Period["testId"],
 ): Promise<Attempt> {
   const finished = await Attempt.findOne({
     where: {
       userId,
-      testId,
       periodId,
       status: "finished",
     },
@@ -52,7 +50,6 @@ export async function getOrCreateActiveAttempt(
   const inProgress = await Attempt.findOne({
     where: {
       userId,
-      testId,
       periodId,
       status: "in_progress",
     },
@@ -62,7 +59,6 @@ export async function getOrCreateActiveAttempt(
 
   return Attempt.create({
     userId,
-    testId,
     periodId,
     status: "in_progress",
     answeredCount: 0,

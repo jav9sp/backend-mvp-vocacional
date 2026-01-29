@@ -1,4 +1,4 @@
-import "./config/env.js";
+import "dotenv";
 import "reflect-metadata";
 
 import express from "express";
@@ -13,11 +13,11 @@ import studentRouter from "./routes/student/student.routes.js";
 
 const app = express();
 
-const webApp = process.env.WEB_APP;
+const frontend = process.env.FRONTEND_URL;
 
 app.use(
   cors({
-    origin: webApp ? [webApp] : true,
+    origin: frontend ? [frontend] : true,
     credentials: true,
   }),
 );

@@ -16,24 +16,43 @@ type AreaKey =
 type Percent = { interes: number; aptitud: number; total: number };
 
 export type InapvReportData = {
-  student: { name: string; email?: string | null };
+  student: {
+    name: string;
+    email?: string | null;
+  };
+
   attempt: {
     id: number;
     finishedAt: string | Date;
-    test: { name: string; version?: string | null };
+
+    period: {
+      id: number;
+      name: string;
+      startAt: string | Date;
+      endAt?: string | Date | null;
+
+      test: {
+        id: number;
+        name: string;
+        version?: string | null;
+      };
+    };
   };
+
   result: {
     id: number;
     createdAt: string | Date;
     topAreas: AreaKey[];
     percentByAreaDim: Record<string, Percent>;
   };
+
   interpretations: {
     interes: string;
     aptitud: string;
     combined: string;
     byArea: Record<string, { interes: string; aptitud: string }>;
   };
+
   careers: Array<{
     id: string | number;
     name: string;
@@ -41,9 +60,16 @@ export type InapvReportData = {
     score: number;
     level?: "universitario" | "tecnico";
   }>;
-  links: Array<{ label: string; url: string; description: string }>;
+
+  links: Array<{
+    label: string;
+    url: string;
+    description: string;
+  }>;
+
   finalConsiderations: string;
-  logoDataUri?: string | null; // opcional
+
+  logoDataUri?: string | null;
 };
 
 const INAPV_AREAS_MAP = Object.fromEntries(
@@ -459,7 +485,7 @@ export function renderInapvReportHtml(data: InapvReportData) {
             Fecha del test: ${escapeHtml(fmtDateCL(data.attempt.finishedAt))}
           </div>
           <div class="badges">
-            <span class="badge">${escapeHtml(data.attempt.test.name)}</span>
+            <span class="badge">${escapeHtml(data.attempt.period.test.name)}</span>
           </div>
         </div>
         <div>${renderLogo(data.logoDataUri)}</div>

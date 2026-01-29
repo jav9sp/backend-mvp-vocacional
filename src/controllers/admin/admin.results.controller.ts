@@ -97,7 +97,6 @@ export async function adminGetAttemptResult(
         answeredCount: attempt.answeredCount,
         finishedAt: attempt.finishedAt,
         userId: attempt.userId,
-        testId: attempt.testId,
         periodId: attempt.periodId,
       },
 

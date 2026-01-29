@@ -5,6 +5,7 @@ import Attempt from "../../models/Attempt.model.js";
 import InapResult from "../../models/InapResult.model.js";
 import Test from "../../models/Test.model.js";
 import User from "../../models/User.model.js";
+import Period from "../../models/Period.model.js";
 
 import { generateInapvPdfBuffer } from "../../services/generateInapvPdfBuffer.service.js";
 import { InapvReportData } from "../../reports/inapv/renderInapvReportHtml.js";
@@ -23,7 +24,7 @@ export async function listStudentResults(
   next: NextFunction,
 ) {
   try {
-    const { userId } = req.auth;
+    const userId = req.auth!.userId;
 
     const results = await InapResult.findAll({
       attributes: [
@@ -39,14 +40,22 @@ export async function listStudentResults(
           model: Attempt,
           as: "attempt",
           required: true,
-          attributes: ["id", "createdAt", "finishedAt"],
+          attributes: ["id", "createdAt", "finishedAt", "periodId", "status"],
           where: { userId, status: "finished" },
           include: [
             {
-              model: Test,
-              as: "test",
+              model: Period,
+              as: "period",
               required: true,
-              attributes: ["id", "name", "version"],
+              attributes: ["id", "name", "testId", "startAt", "endAt"],
+              include: [
+                {
+                  model: Test,
+                  as: "test",
+                  required: true,
+                  attributes: ["id", "version", "name"],
+                },
+              ],
             },
           ],
         },
@@ -55,16 +64,35 @@ export async function listStudentResults(
     });
 
     // Return [] para evitar retries del front
-    if (results.length === 0) {
-      return res.json({
-        ok: true,
-        results,
-      });
-    }
-
     return res.json({
       ok: true,
-      results,
+      results: results.map((r: any) => ({
+        id: r.id,
+        createdAt: r.createdAt,
+        scoresByAreaDim: r.scoresByAreaDim,
+        maxByAreaDim: r.maxByAreaDim,
+        percentByAreaDim: r.percentByAreaDim,
+        topAreas: r.topAreas,
+
+        // info de contexto para la tarjeta
+        attempt: {
+          id: r.attempt.id,
+          status: r.attempt.status,
+          createdAt: r.attempt.createdAt,
+          finishedAt: r.attempt.finishedAt,
+        },
+        period: {
+          id: r.attempt.period.id,
+          name: r.attempt.period.name,
+          startAt: r.attempt.period.startAt,
+          endAt: r.attempt.period.endAt,
+        },
+        test: {
+          id: r.attempt.period.test.id,
+          version: r.attempt.period.test.version,
+          name: r.attempt.period.test.name,
+        },
+      })),
     });
   } catch (error) {
     return next(error);
@@ -91,21 +119,35 @@ export async function getResultDetails(
     const { resultsId } = parsed.data;
 
     const result = await InapResult.findByPk(resultsId, {
+      attributes: [
+        "id",
+        "scoresByAreaDim",
+        "maxByAreaDim",
+        "percentByAreaDim",
+        "topAreas",
+        "createdAt",
+      ],
       include: [
         {
           model: Attempt,
           as: "attempt",
           required: true,
-          where: {
-            userId,
-          },
-          attributes: ["id", "status", "createdAt"],
+          attributes: ["id", "createdAt", "finishedAt", "status"],
+          where: { userId, status: "finished" },
           include: [
             {
-              model: Test,
-              as: "test",
+              model: Period,
+              as: "period",
               required: true,
-              attributes: ["id", "name", "version"],
+              attributes: ["id", "name", "startAt", "endAt"],
+              include: [
+                {
+                  model: Test,
+                  as: "test",
+                  required: true,
+                  attributes: ["id", "version", "name"],
+                },
+              ],
             },
           ],
         },
@@ -121,7 +163,32 @@ export async function getResultDetails(
 
     return res.json({
       ok: true,
-      result,
+      result: {
+        id: result.id,
+        createdAt: result.createdAt,
+        scoresByAreaDim: result.scoresByAreaDim,
+        maxByAreaDim: result.maxByAreaDim,
+        percentByAreaDim: result.percentByAreaDim,
+        topAreas: result.topAreas,
+        attempt: {
+          id: (result as any).attempt.id,
+          status: (result as any).attempt.status,
+          createdAt: (result as any).attempt.createdAt,
+          finishedAt: (result as any).attempt.finishedAt,
+        },
+        period: {
+          id: (result as any).attempt.period.id,
+          name: (result as any).attempt.period.name,
+          startAt: (result as any).attempt.period.startAt,
+          endAt: (result as any).attempt.period.endAt,
+        },
+        test: {
+          id: (result as any).attempt.period.test.id,
+          key: (result as any).attempt.period.test.key,
+          version: (result as any).attempt.period.test.version,
+          name: (result as any).attempt.period.test.name,
+        },
+      },
     });
   } catch (error) {
     return next(error);
@@ -154,32 +221,52 @@ export async function getResultPdf(
 
     const { resultsId } = parsed.data;
     const userId = req.auth!.userId;
+    const orgId = req.auth!.organizationId;
 
-    const result = await InapResult.findByPk(resultsId, {
+    // 🔒 Trae solo si:
+    // - result pertenece al attempt del usuario
+    // - attempt está finished (opcional pero recomendable para PDF)
+    // - el period pertenece a la org del user (scoping)
+    const result = await InapResult.findOne({
+      where: { id: resultsId },
+      attributes: ["id", "topAreas", "percentByAreaDim", "createdAt"],
       include: [
         {
           model: Attempt,
           as: "attempt",
           required: true,
           attributes: ["id", "userId", "status", "createdAt", "finishedAt"],
+          where: { userId, status: "finished" },
           include: [
             {
-              model: Test,
-              as: "test",
+              model: Period,
+              as: "period",
               required: true,
-              attributes: ["id", "name", "version"],
+              attributes: [
+                "id",
+                "organizationId",
+                "name",
+                "testId",
+                "startAt",
+                "endAt",
+              ],
+              where: { organizationId: orgId },
+              include: [
+                {
+                  model: Test,
+                  as: "test",
+                  required: true,
+                  attributes: ["id", "key", "version", "name"],
+                },
+              ],
             },
           ],
         },
       ],
     });
 
-    if (!result || !result.attempt) {
+    if (!result) {
       return res.status(404).json({ ok: false, error: "Result not found" });
-    }
-
-    if (result.attempt.userId !== userId) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
     }
 
     // opcional: datos del estudiante
@@ -190,13 +277,17 @@ export async function getResultPdf(
     const topAreas = (result.topAreas ?? []).slice(0, 3);
 
     const careers = recommendCareers({
-      percentByAreaDim: result.percentByAreaDim ?? {},
+      percentByAreaDim: (result.percentByAreaDim ?? {}) as any,
       careers: CAREERS_MOCK,
       topAreas,
       mode: "combined",
       limit: 6,
       minPerArea: 2,
     });
+
+    const attempt = (result as any).attempt;
+    const period = attempt.period;
+    const test = period.test;
 
     const reportData: InapvReportData = {
       student: {
@@ -205,11 +296,18 @@ export async function getResultPdf(
       },
 
       attempt: {
-        id: result.attempt.id,
-        finishedAt: result.attempt.finishedAt ?? result.attempt.createdAt,
-        test: {
-          name: result.attempt.test?.name ?? "INAP-V",
-          version: result.attempt.test?.version ?? "v1",
+        id: attempt.id,
+        finishedAt: attempt.finishedAt ?? attempt.createdAt,
+        period: {
+          id: period.id,
+          name: period.name,
+          startAt: period.startAt,
+          endAt: period.endAt ?? null,
+          test: {
+            id: test.id,
+            name: test.name,
+            version: test.version,
+          },
         },
       },
 
@@ -228,23 +326,23 @@ export async function getResultPdf(
       },
 
       careers: careers.map((c) => ({
-        id: Number(String(c.id).replace(/\D/g, "")) || 0, // si tu template exige number
+        id: Number(String(c.id).replace(/\D/g, "")) || 0,
         name: c.name,
         areaKey: c.areaKey,
         score: c.score,
       })),
 
       links: INTEREST_LINKS,
-
       finalConsiderations: finalConsiderationsPlain,
-
       logoDataUri: null,
     };
 
-    // ✅ generar PDF con tu service
     const pdf = await generateInapvPdfBuffer(reportData);
 
-    const filename = `inapv_result_${result.id}.pdf`;
+    const safeKey = test.key ?? "test";
+    const safeVersion = test.version ?? "v1";
+    const filename = `${safeKey}_${safeVersion}_result_${result.id}.pdf`;
+
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     return res.send(pdf);

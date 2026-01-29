@@ -19,11 +19,6 @@ export default class NemConversion extends Model {
 
   @AllowNull(false)
   @Index("idx_nem_conversions_lookup")
-  @Column(DataType.INTEGER)
-  declare year: number;
-
-  @AllowNull(false)
-  @Index("idx_nem_conversions_lookup")
   @Column(DataType.ENUM("hc", "hc_adults", "tp"))
   declare educationType: EducationType;
 

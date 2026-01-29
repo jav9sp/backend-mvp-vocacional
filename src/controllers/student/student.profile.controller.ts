@@ -17,7 +17,6 @@ const UpdateMyProfileBodySchema = z.object({
   email: z.email().max(180).optional(),
   educationType: EducationTypeInputSchema.optional(),
   nemAvg: z.number().min(4.0).max(7.0).optional(),
-  nemYear: z.number().int().min(2000).max(2100).optional(),
 });
 
 export async function getMyProfile(
@@ -39,7 +38,6 @@ export async function getMyProfile(
           userId: sp.userId,
           educationType: sp.educationType,
           nemAvg: sp.nemAvg,
-          nemYear: sp.nemYear,
           nemScore: sp.nemScore,
           rankingScore: sp.rankingScore,
         }
@@ -71,7 +69,6 @@ function round2(n: number) {
 }
 
 async function resolveNemScore(params: {
-  year: number;
   educationType: EducationType; // hc | hc_adults | tp
   nemAvg: number; // 4.00 - 7.00
 }) {
@@ -79,14 +76,13 @@ async function resolveNemScore(params: {
 
   const row = await NemConversion.findOne({
     where: {
-      year: params.year,
       educationType: params.educationType,
       nemAvg: nemAvgStr,
     },
   });
 
   if (!row) {
-    const msg = `No existe conversión NEM para year=${params.year}, educationType=${params.educationType}, nemAvg=${nemAvgStr}`;
+    const msg = `No existe conversión NEM para educationType=${params.educationType}, nemAvg=${nemAvgStr}`;
     const err = new Error(msg);
     (err as any).status = 400;
     throw err;
@@ -114,13 +110,11 @@ export async function updateMyProfile(
       });
     }
 
-    const { name, email, educationType, nemAvg, nemYear } = parsed.data;
+    const { name, email, educationType, nemAvg } = parsed.data;
 
     const wantsUserUpdate = name !== undefined || email !== undefined;
     const wantsStudentUpdate =
-      educationType !== undefined ||
-      nemAvg !== undefined ||
-      nemYear !== undefined;
+      educationType !== undefined || nemAvg !== undefined;
 
     if (!wantsUserUpdate && !wantsStudentUpdate) {
       return res.status(400).json({ ok: false, error: "No fields to update" });
@@ -162,14 +156,6 @@ export async function updateMyProfile(
             ? Number(existing.nemAvg)
             : undefined;
 
-      const finalNemYear =
-        nemYear !== undefined
-          ? nemYear
-          : (existing?.nemYear ?? new Date().getFullYear());
-
-      // ✅ Regla: para poder calcular (y por ende crear o actualizar),
-      // necesitamos educationType + nemAvg + nemYear (año siempre lo tenemos por default)
-      // Pero educationType y nemAvg deben existir (del body o del perfil existente)
       const missing: string[] = [];
       if (!finalEducationType) missing.push("educationType");
       if (finalNemAvgNum === undefined || Number.isNaN(finalNemAvgNum))
@@ -189,7 +175,6 @@ export async function updateMyProfile(
           userId: user.id,
           educationType: finalEducationType,
           nemAvg: finalNemAvgNum.toFixed(2),
-          nemYear: finalNemYear,
           nemScore: 0,
           rankingScore: 0,
         } as any));
@@ -197,17 +182,14 @@ export async function updateMyProfile(
       // Recalcular siempre que cambie algo relevante (o si score=0)
       const needsRecalc =
         profile.educationType !== finalEducationType ||
-        profile.nemYear !== finalNemYear ||
         round2(Number(profile.nemAvg)) !== round2(finalNemAvgNum) ||
         profile.nemScore === 0;
 
       profile.educationType = finalEducationType;
-      profile.nemYear = finalNemYear;
       profile.nemAvg = finalNemAvgNum.toFixed(2);
 
       if (needsRecalc) {
         const { nemAvgStr, nemScore, rankingScore } = await resolveNemScore({
-          year: finalNemYear,
           educationType: finalEducationType,
           nemAvg: finalNemAvgNum,
         });
@@ -223,7 +205,6 @@ export async function updateMyProfile(
         userId: profile.userId,
         educationType: profile.educationType,
         nemAvg: profile.nemAvg,
-        nemYear: profile.nemYear,
         nemScore: profile.nemScore,
         rankingScore: profile.rankingScore,
       };
