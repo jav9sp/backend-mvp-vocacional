@@ -65,7 +65,7 @@ class Period extends Model {
     foreignKey: "organizationId",
     as: "organization",
   })
-  declare organization?: Organization;
+  declare organization?: any;
 
   @BelongsTo(() => Test, { foreignKey: "testId", as: "test" })
   declare test?: any;

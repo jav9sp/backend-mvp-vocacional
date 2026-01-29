@@ -41,7 +41,7 @@ class InapAnswer extends Model {
   declare attemptId: number;
 
   @BelongsTo(() => Attempt, { foreignKey: "attemptId", as: "attempt" })
-  declare attempt?: Attempt;
+  declare attempt?: any;
 
   @ForeignKey(() => InapQuestion)
   @AllowNull(false)
@@ -49,7 +49,7 @@ class InapAnswer extends Model {
   declare questionId: number;
 
   @BelongsTo(() => InapQuestion, { foreignKey: "questionId", as: "question" })
-  declare question?: InapQuestion;
+  declare question?: any;
 
   @AllowNull(false)
   @Column(DataType.BOOLEAN)

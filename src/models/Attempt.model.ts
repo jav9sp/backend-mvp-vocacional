@@ -73,7 +73,7 @@ class Attempt extends Model {
   declare finishedAt: Date | null;
 
   @HasOne(() => InapResult, { foreignKey: "attemptId", as: "result" })
-  declare result?: InapResult;
+  declare result?: any;
 }
 
 export default Attempt;

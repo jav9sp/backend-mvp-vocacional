@@ -53,7 +53,7 @@ class Enrollment extends Model {
   declare meta: Record<string, any> | null;
 
   @BelongsTo(() => Period, { foreignKey: "periodId", as: "period" })
-  declare period?: Period;
+  declare period?: any;
 
   @BelongsTo(() => User, { foreignKey: "studentUserId", as: "student" })
   declare student?: any;

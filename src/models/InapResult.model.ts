@@ -35,7 +35,7 @@ class InapResult extends Model {
   declare attemptId: number;
 
   @BelongsTo(() => Attempt, { foreignKey: "attemptId", as: "attempt" })
-  declare attempt?: Attempt;
+  declare attempt?: any;
 
   @AllowNull(false)
   @Column(DataType.JSONB)
