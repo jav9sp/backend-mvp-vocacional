@@ -4,6 +4,7 @@ import Attempt from "../models/Attempt.model.js";
 import InapResult from "../models/InapResult.model.js";
 import User from "../models/User.model.js";
 import Test from "../models/Test.model.js";
+import Period from "../models/Period.model.js";
 
 export type AreaDim = { interes: number; aptitud: number; total: number };
 
@@ -95,7 +96,6 @@ export async function adminGetPeriodResultsData(
   const pageSize = Math.min(Math.max(pageSizeRaw, 1), 200);
   const offset = (page - 1) * pageSize;
 
-  // filtro sobre estudiante (para la tabla)
   const userWhere: any = {};
   if (q) {
     userWhere[Op.or] = [
@@ -105,7 +105,7 @@ export async function adminGetPeriodResultsData(
     ];
   }
 
-  // 1) COUNTS (globales)
+  // 1) COUNTS
   const [studentsCount, finishedCount, inProgressCount] = await Promise.all([
     Enrollment.count({ where: { periodId } }),
     Attempt.count({ where: { periodId, status: "finished" } }),
@@ -117,7 +117,7 @@ export async function adminGetPeriodResultsData(
     0,
   );
 
-  // 2) resultsAvailableCount (cuántos InapResult existen para attempts finished del periodo)
+  // 2) resultsAvailableCount
   const resultsAvailableCount = await InapResult.count({
     include: [
       {
@@ -130,7 +130,7 @@ export async function adminGetPeriodResultsData(
     ],
   });
 
-  // 3) Agregación ponderada por área (Σscore / Σmax)
+  // 3) Agregación por área
   const resultsForAgg = await InapResult.findAll({
     attributes: ["scoresByAreaDim", "maxByAreaDim"],
     include: [
@@ -189,7 +189,7 @@ export async function adminGetPeriodResultsData(
 
   const topAreasPeriod = byArea.slice(0, 5).map((x) => x.area);
 
-  // 4) Tabla paginada (solo alumnos con resultado, para drill-down)
+  // 4) Tabla paginada (resultados del periodo) + student + period + test
   const { rows: resultRows, count: total } = await InapResult.findAndCountAll({
     attributes: ["id", "attemptId", "topAreas", "createdAt"],
     include: [
@@ -197,7 +197,7 @@ export async function adminGetPeriodResultsData(
         model: Attempt,
         as: "attempt",
         required: true,
-        attributes: ["id", "answeredCount", "finishedAt", "userId"],
+        attributes: ["id", "answeredCount", "finishedAt", "userId", "periodId"],
         where: { periodId, status: "finished" },
         include: [
           {
@@ -208,10 +208,18 @@ export async function adminGetPeriodResultsData(
             where: userWhere,
           },
           {
-            model: Test,
-            as: "test",
-            required: false,
-            attributes: ["id", "name", "version", "key"],
+            model: Period,
+            as: "period",
+            required: true,
+            attributes: ["id", "name", "testId"],
+            include: [
+              {
+                model: Test,
+                as: "test",
+                required: true,
+                attributes: ["id", "key", "name", "version"],
+              },
+            ],
           },
         ],
       },
@@ -222,35 +230,42 @@ export async function adminGetPeriodResultsData(
     distinct: true,
   });
 
-  const rows: PeriodResultsRow[] = (resultRows as any[]).map((r) => ({
-    resultId: r.id,
-    attemptId: r.attemptId,
-    createdAt: new Date(r.createdAt).toISOString(),
-    topAreas: r.topAreas ?? [],
-    attempt: {
-      id: r.attempt.id,
-      answeredCount: r.attempt.answeredCount,
-      finishedAt: r.attempt.finishedAt
-        ? new Date(r.attempt.finishedAt).toISOString()
+  const rows: PeriodResultsRow[] = (resultRows as any[]).map((r) => {
+    const attempt = r.attempt;
+    const student = attempt?.user ?? null;
+    const period = attempt?.period ?? null;
+    const test = period?.test ?? null;
+
+    return {
+      resultId: r.id,
+      attemptId: r.attemptId,
+      createdAt: new Date(r.createdAt).toISOString(),
+      topAreas: r.topAreas ?? [],
+      attempt: {
+        id: attempt.id,
+        answeredCount: attempt.answeredCount,
+        finishedAt: attempt.finishedAt
+          ? new Date(attempt.finishedAt).toISOString()
+          : null,
+      },
+      student: student
+        ? {
+            id: student.id,
+            rut: student.rut,
+            name: student.name,
+            email: student.email,
+          }
         : null,
-    },
-    student: r.attempt.user
-      ? {
-          id: r.attempt.user.id,
-          rut: r.attempt.user.rut,
-          name: r.attempt.user.name,
-          email: r.attempt.user.email,
-        }
-      : null,
-    test: r.attempt.test
-      ? {
-          id: r.attempt.test.id,
-          name: r.attempt.test.name,
-          version: r.attempt.test.version,
-          key: r.attempt.test.key,
-        }
-      : null,
-  }));
+      test: test
+        ? {
+            id: test.id,
+            name: test.name,
+            version: test.version,
+            key: test.key,
+          }
+        : null,
+    };
+  });
 
   return {
     counts: {

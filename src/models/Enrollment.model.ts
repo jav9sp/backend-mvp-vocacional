@@ -19,12 +19,12 @@ export type EnrollmentStatus = "invited" | "active" | "completed" | "removed";
   tableName: "enrollments",
   timestamps: true,
   indexes: [
-    { name: "idx_enrollments_period", fields: ["periodId"] },
-    { name: "idx_enrollments_student", fields: ["studentUserId"] },
+    { name: "idx_enrollments_period", fields: ["period_id"] },
+    { name: "idx_enrollments_student", fields: ["student_user_id"] },
     {
       name: "uniq_period_student",
       unique: true,
-      fields: ["periodId", "studentUserId"],
+      fields: ["period_id", "student_user_id"],
     },
   ],
 })

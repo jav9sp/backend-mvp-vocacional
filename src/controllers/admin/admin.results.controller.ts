@@ -44,28 +44,29 @@ export async function adminGetAttemptResult(
         "answeredCount",
         "finishedAt",
         "userId",
-        "testId",
         "periodId",
       ],
       include: [
         {
           model: Period,
           as: "period",
+          required: true,
           attributes: ["id", "organizationId", "name", "status", "testId"],
           where: { organizationId },
-          required: true,
+          include: [
+            {
+              model: Test,
+              as: "test",
+              required: true,
+              attributes: ["id", "key", "name", "version"],
+            },
+          ],
         },
         {
           model: User,
           as: "user",
+          required: true,
           attributes: ["id", "rut", "name", "email"],
-          required: true,
-        },
-        {
-          model: Test,
-          as: "test",
-          attributes: ["id", "name", "version"],
-          required: true,
         },
       ],
     });
@@ -74,7 +75,7 @@ export async function adminGetAttemptResult(
       return res.status(404).json({ ok: false, error: "Attempt not found" });
     }
 
-    let result = null;
+    let result: InapResult | null = null;
 
     if (attempt.status === "finished") {
       result = await InapResult.findOne({
@@ -87,6 +88,9 @@ export async function adminGetAttemptResult(
         ],
       });
     }
+
+    const period = (attempt as any).period;
+    const test = period?.test;
 
     return res.json({
       ok: true,
@@ -109,20 +113,21 @@ export async function adminGetAttemptResult(
           }
         : null,
 
-      period: attempt.period
+      period: period
         ? {
-            id: attempt.period.id,
-            name: attempt.period.name,
-            status: attempt.period.status,
-            testId: attempt.period.testId,
+            id: period.id,
+            name: period.name,
+            status: period.status,
+            testId: period.testId,
           }
         : null,
 
-      test: attempt.test
+      test: test
         ? {
-            id: attempt.test.id,
-            name: attempt.test.name,
-            version: attempt.test.version,
+            id: test.id,
+            key: test.key,
+            name: test.name,
+            version: test.version,
           }
         : null,
 
@@ -169,7 +174,7 @@ export async function adminGetAttemptReportPdf(
     const { attemptId } = parsed.data;
     const { organizationId } = req.auth!;
 
-    // 1) Buscar attempt asegurando pertenencia a la organización vía Period
+    // 1) Attempt + Period(scoping) + Test(vía Period)
     const attempt = await Attempt.findByPk(attemptId, {
       attributes: [
         "id",
@@ -184,14 +189,23 @@ export async function adminGetAttemptReportPdf(
           model: Period,
           as: "period",
           required: true,
-          attributes: ["id", "organizationId"],
+          attributes: [
+            "id",
+            "organizationId",
+            "name",
+            "startAt",
+            "endAt",
+            "testId",
+          ],
           where: { organizationId },
-        },
-        {
-          model: Test,
-          as: "test",
-          required: true,
-          attributes: ["id", "name", "version"],
+          include: [
+            {
+              model: Test,
+              as: "test",
+              required: true,
+              attributes: ["id", "key", "name", "version"],
+            },
+          ],
         },
       ],
     });
@@ -200,7 +214,7 @@ export async function adminGetAttemptReportPdf(
       return res.status(404).json({ ok: false, error: "Attempt not found" });
     }
 
-    // 2) Buscar result por attemptId (más robusto para admin)
+    // 2) Result por attemptId
     const result = await InapResult.findOne({
       where: { attemptId: attempt.id },
       attributes: ["id", "topAreas", "percentByAreaDim", "createdAt"],
@@ -210,7 +224,7 @@ export async function adminGetAttemptReportPdf(
       return res.status(404).json({ ok: false, error: "Result not found" });
     }
 
-    // 3) Traer estudiante (dueño del attempt)
+    // 3) Estudiante
     const student = await User.findByPk(attempt.userId, {
       attributes: ["id", "name", "email"],
     });
@@ -226,6 +240,9 @@ export async function adminGetAttemptReportPdf(
       minPerArea: 2,
     });
 
+    const period = (attempt as any).period;
+    const test = period?.test;
+
     const reportData: InapvReportData = {
       student: {
         name: student?.name ?? "Estudiante",
@@ -235,9 +252,16 @@ export async function adminGetAttemptReportPdf(
       attempt: {
         id: attempt.id,
         finishedAt: attempt.finishedAt ?? attempt.createdAt,
-        test: {
-          name: attempt.test?.name ?? "INAP-V",
-          version: attempt.test?.version ?? "v1",
+        period: {
+          id: period.id,
+          name: period.name,
+          startAt: period.startAt,
+          endAt: period.endAt ?? null,
+          test: {
+            id: test.id,
+            name: test.name,
+            version: test.version,
+          },
         },
       },
 
@@ -263,15 +287,12 @@ export async function adminGetAttemptReportPdf(
       })),
 
       links: INTEREST_LINKS,
-
       finalConsiderations: finalConsiderationsPlain,
-
       logoDataUri: null,
     };
 
     const pdf = await generateInapvPdfBuffer(reportData);
 
-    // nombre más user friendly
     const filename = `informe_inapv_attempt_${attempt.id}.pdf`;
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);

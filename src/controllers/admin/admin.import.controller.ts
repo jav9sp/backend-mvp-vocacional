@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import Enrollment from "../../models/Enrollment.model.js";
 import User from "../../models/User.model.js";
 import { normalizeRut } from "../../utils/rut.js";
-import bcrypt from "bcrypt"; // usa el que ya estés usando; si usas bcrypt, cámbialo
+import bcrypt from "bcrypt";
 
 const RowSchema = z.object({
   rut: z.string().min(3, "RUT inválido / vacío"),
@@ -19,7 +19,7 @@ function normalizeHeaderKey(k: string) {
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // sin tildes
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "");
 }
 
@@ -71,7 +71,6 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
   if (!file)
     return res.status(400).json({ ok: false, error: "Missing file (xlsx)" });
 
-  // Parse xlsx
   const workbook = XLSX.read(file.buffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
@@ -99,19 +98,22 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
     });
   }
 
+  const orgId = req.auth!.organizationId;
+
   let createdUsers = 0;
   let updatedUsers = 0;
   let enrolled = 0;
   let alreadyEnrolled = 0;
 
-  const errors: Array<{ row: number; message: string; field?: string }> = [];
-  const MAX_ERRORS = 200; // evita respuestas gigantes
+  let blockedOtherOrg = 0; // ✅ nuevo contador
 
-  // Import row by row (MVP). Si luego quieres rendimiento, lo optimizamos con bulk ops.
+  const errors: Array<{ row: number; message: string; field?: string }> = [];
+  const MAX_ERRORS = 200;
+
   for (let i = 0; i < rows.length; i++) {
     const raw = rows[i];
-
     const canon = canonicalizeRowKeys(raw);
+
     const parsedRow = RowSchema.safeParse({
       rut: normalizeRut(String(canon.rut ?? "")),
       nombre: String(canon.nombre ?? "").trim(),
@@ -134,26 +136,70 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
 
     const { rut, nombre: name, email, curso: course } = parsedRow.data;
 
-    // 1) Upsert user student por rut
-    let user = await User.findOne({ where: { rut } });
+    // 1) Buscar user por rut
+    let user = await User.findOne({
+      where: { rut },
+      attributes: [
+        "id",
+        "rut",
+        "name",
+        "email",
+        "organizationId",
+        "passwordHash",
+      ],
+    });
+
+    // ✅ BLOQUEO: existe pero pertenece a otra organización
+    if (user && user.organizationId !== orgId) {
+      blockedOtherOrg++;
+      errors.push({
+        row: i + 2,
+        field: "rut",
+        message:
+          "Este estudiante ya existe en otra institución. No puedes importarlo en tu organización.",
+      });
+      if (errors.length >= MAX_ERRORS) break;
+      continue;
+    }
 
     if (!user) {
-      // password inicial = rut (hash)
       const passwordHash = await bcrypt.hash(rut, 10);
 
-      user = await User.create({
-        role: "student",
-        name,
-        organizationId: req.auth.organizationId,
-        email: email || null,
-        rut,
-        passwordHash,
-      } as any);
+      try {
+        user = await User.create({
+          role: "student",
+          name,
+          organizationId: orgId,
+          email: email || null,
+          rut,
+          passwordHash,
+        } as any);
 
-      createdUsers++;
+        createdUsers++;
+      } catch (e: any) {
+        // por si hay carrera (otro proceso creó el mismo rut justo antes)
+        if (e?.name === "SequelizeUniqueConstraintError") {
+          const existing = await User.findOne({ where: { rut } });
+          if (existing && existing.organizationId !== orgId) {
+            blockedOtherOrg++;
+            errors.push({
+              row: i + 2,
+              field: "rut",
+              message:
+                "Este estudiante ya existe en otra institución. No puedes importarlo en tu organización.",
+            });
+            if (errors.length >= MAX_ERRORS) break;
+            continue;
+          }
+          user = existing as any;
+        } else {
+          throw e;
+        }
+      }
     } else {
-      // update info básica si cambió (no tocamos password)
+      // update info básica si cambió (solo si es de la misma org)
       let changed = false;
+
       if (user.name !== name) {
         user.name = name;
         changed = true;
@@ -166,13 +212,16 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
         user.rut = rut;
         changed = true;
       }
+
       if (changed) {
         await user.save();
         updatedUsers++;
       }
     }
 
-    // 2) Enrollment periodo ↔ student
+    if (!user) continue; // paranoia
+
+    // 2) Enrollment
     const [enr, wasCreated] = await Enrollment.findOrCreate({
       where: { periodId: period.id, studentUserId: user.id },
       defaults: {
@@ -187,7 +236,6 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
       enrolled++;
     } else {
       alreadyEnrolled++;
-      // si ya estaba pero viene course nuevo, lo guardamos
       if (course) {
         const meta = (enr.meta || {}) as any;
         if (!meta.course) {
@@ -207,6 +255,7 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
       updatedUsers,
       enrolled,
       alreadyEnrolled,
+      blockedOtherOrg, // ✅
       errors: errors.length,
     },
     errors,

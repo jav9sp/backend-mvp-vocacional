@@ -32,7 +32,7 @@ export async function adminListPeriods(req: Request, res: Response) {
 
   const enrollAgg = await Enrollment.findAll({
     where: { periodId: { [Op.in]: periodIds } },
-    attributes: ["periodId", [fn("COUNT", col("periodId")), "studentsCount"]],
+    attributes: ["periodId", [fn("COUNT", col("period_id")), "studentsCount"]],
     group: ["periodId"],
     raw: true,
   });
@@ -41,7 +41,7 @@ export async function adminListPeriods(req: Request, res: Response) {
     where: { periodId: { [Op.in]: periodIds }, status: "finished" },
     attributes: [
       "periodId",
-      [fn("COUNT", fn("DISTINCT", col("userId"))), "finishedCount"],
+      [fn("COUNT", fn("DISTINCT", col("user_id"))), "finishedCount"],
     ],
     group: ["periodId"],
     raw: true,

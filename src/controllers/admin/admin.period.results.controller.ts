@@ -11,14 +11,23 @@ export async function adminGetPeriodResults(
   next: NextFunction,
 ) {
   try {
-    const period = (req as any).period!;
+    const period = (req as any).period;
+    if (!period) {
+      return res.status(404).json({ ok: false, error: "Period not found" });
+    }
+
+    const { organizationId } = req.auth!;
+    if (period.organizationId !== organizationId) {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+
     const periodId = period.id;
 
     const data = await adminGetPeriodResultsData({
       periodId,
       q: String(req.query.q ?? "").trim(),
-      page: Number(req.query.page ?? 1),
-      pageSize: Number(req.query.pageSize ?? 25),
+      page: Math.max(Number(req.query.page ?? 1), 1),
+      pageSize: Math.min(Math.max(Number(req.query.pageSize ?? 25), 1), 200),
     });
 
     return res.json({
@@ -29,6 +38,14 @@ export async function adminGetPeriodResults(
         status: period.status,
         testId: period.testId,
       },
+      test: period.test
+        ? {
+            id: period.test.id,
+            key: period.test.key,
+            name: period.test.name,
+            version: period.test.version,
+          }
+        : null,
       ...data,
     });
   } catch (error) {

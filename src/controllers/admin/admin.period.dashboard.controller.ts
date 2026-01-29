@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { Op, Sequelize, fn, col, literal } from "sequelize";
 import Enrollment from "../../models/Enrollment.model.js";
 import User from "../../models/User.model.js";
 import Attempt from "../../models/Attempt.model.js";
-import InapResult from "../../models/InapResult.model.js";
+import { error } from "node:console";
 
 type StudentStatus = "not_started" | "in_progress" | "finished";
 const STUDENT_STATUSES: StudentStatus[] = [
@@ -18,11 +18,16 @@ function normalizeStatus(attempt: any): StudentStatus {
   return "in_progress";
 }
 
-export async function getPeriodDashboard(req: Request, res: Response) {
+export async function getPeriodDashboard(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const period = (req as any).period;
-    if (!period)
+    if (!period) {
       return res.status(404).json({ ok: false, error: "Period not found" });
+    }
 
     const periodId = period.id;
 
@@ -36,21 +41,20 @@ export async function getPeriodDashboard(req: Request, res: Response) {
     const offset = (page - 1) * pageSize;
 
     // ----- COUNTS GLOBALES (sin filtros) -----
-    const studentsCount = await Enrollment.count({ where: { periodId } });
+    const studentsCount = await Enrollment.count({
+      where: { periodId },
+    });
 
     const agg = await Attempt.findOne({
       where: { periodId },
       attributes: [
-        [fn("COUNT", fn("DISTINCT", col("userId"))), "startedCount"],
         [
-          fn(
-            "COUNT",
-            fn(
-              "DISTINCT",
-              literal(
-                `CASE WHEN status = 'finished' THEN "userId" ELSE NULL END`,
-              ),
-            ),
+          Sequelize.literal('COUNT(DISTINCT "Attempt"."user_id")'),
+          "startedCount",
+        ],
+        [
+          Sequelize.literal(
+            `COUNT(DISTINCT CASE WHEN "Attempt"."status" = 'finished' THEN "Attempt"."user_id" END)`,
           ),
           "finishedCount",
         ],
@@ -79,19 +83,18 @@ export async function getPeriodDashboard(req: Request, res: Response) {
     const enrollmentWhere: any = { periodId };
     if (course) enrollmentWhere.meta = { [Op.contains]: { course } };
 
-    // Status calculado (para filtrar antes de paginar)
     const statusLiteral = Sequelize.literal(`
       CASE
         WHEN EXISTS (
           SELECT 1 FROM attempts a
-          WHERE a.period_id = enrollments.period_id
-            AND a.user_id = enrollments.student_user_id
+          WHERE a.period_id = "enrollment"."period_id"
+            AND a.user_id = "enrollment"."student_user_id"
             AND a.status = 'finished'
         ) THEN 'finished'
         WHEN EXISTS (
           SELECT 1 FROM attempts a
-          WHERE a.period_id = enrollments.period_id
-            AND a.user_id = enrollments.student_user_id
+          WHERE a.period_id = "enrollment"."period_id"
+            AND a.user_id = "enrollment"."student_user_id"
         ) THEN 'in_progress'
         ELSE 'not_started'
       END
@@ -105,7 +108,6 @@ export async function getPeriodDashboard(req: Request, res: Response) {
           }
         : enrollmentWhere;
 
-    // ----- ENROLLMENTS + STUDENT (paginado) -----
     const { rows: enrollments, count: total } =
       await Enrollment.findAndCountAll({
         where: whereWithStatus,
@@ -123,9 +125,8 @@ export async function getPeriodDashboard(req: Request, res: Response) {
         offset,
       });
 
-    const studentUserIds = enrollments.map((e) => e.studentUserId);
+    const studentUserIds = enrollments.map((e: any) => e.studentUserId);
 
-    // ----- ATTEMPTS DEL PERIODO PARA LOS USERS DE LA PÁGINA + RESULT -----
     const attempts = studentUserIds.length
       ? await Attempt.findAll({
           where: { periodId, userId: { [Op.in]: studentUserIds } },
@@ -164,7 +165,6 @@ export async function getPeriodDashboard(req: Request, res: Response) {
       };
     });
 
-    // cursos (solo desde página actual; si quieres dropdown global te hago endpoint /courses)
     const coursesSet = new Set<string>();
     for (const e of enrollments as any[]) {
       const meta = e.meta as any;
@@ -195,8 +195,6 @@ export async function getPeriodDashboard(req: Request, res: Response) {
       rows,
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ ok: false, error: "Unexpected error", detail: String(err) });
+    return next(error);
   }
 }
