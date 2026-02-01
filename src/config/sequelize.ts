@@ -17,7 +17,7 @@ import OfferFlat from "../models/OfferFlat.model.js";
 
 dotenv.config();
 
-const databaseUrl = process.env.DATABASE_DEV;
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) throw new Error("DATABASE_URL not found");
 
