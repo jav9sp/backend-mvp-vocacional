@@ -26,10 +26,6 @@ function onlyExistingAttrs<T extends Record<string, any>>(
   return out;
 }
 
-function argFlag(name: string) {
-  return process.argv.includes(name);
-}
-
 /**
  * Calcula dígito verificador RUT chileno.
  * Base: número sin DV (ej: 12345678) -> DV: 0-9 o K

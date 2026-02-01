@@ -5,11 +5,12 @@ import express from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
-import { sequelize, connectDB } from "./config/sequelize.js";
+import { connectDB } from "./config/sequelize.js";
 
 import authRoutes from "./routes/auth/auth.routes.js";
 import adminRoutes from "./routes/admin/admin.routes.js";
 import studentRouter from "./routes/student/student.routes.js";
+import demreRouter from "./routes/demre/demre.routes.js";
 
 const app = express();
 
@@ -49,6 +50,9 @@ app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/student", studentRouter);
 
+// Solo requiere auth
+app.use("/api/demre", demreRouter);
+
 // (Opcional) 404 consistente
 app.use((_req, res) => {
   res.status(404).json({ ok: false, error: "Not found" });
@@ -62,11 +66,6 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 
 async function bootstrap() {
   await connectDB();
-
-  const isDev = process.env.NODE_ENV !== "production";
-  if (isDev) {
-    await sequelize.sync();
-  }
 
   const port = Number(process.env.API_PORT || 4000);
   app.listen(port, () => {

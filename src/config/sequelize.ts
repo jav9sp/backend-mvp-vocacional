@@ -13,10 +13,11 @@ import Enrollment from "../models/Enrollment.model.js";
 import StudentProfile from "../models/StudentProfile.model.js";
 import NemConversion from "../models/NemConversion.model.js";
 import PaesScoreRecord from "../models/PaesScoreRecord.model.js";
+import OfferFlat from "../models/OfferFlat.model.js";
 
 dotenv.config();
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_DEV;
 
 if (!databaseUrl) throw new Error("DATABASE_URL not found");
 
@@ -40,13 +41,15 @@ export const sequelize = new Sequelize(databaseUrl, {
     StudentProfile,
     NemConversion,
     PaesScoreRecord,
+    OfferFlat,
   ],
 });
 
 export async function connectDB() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
+    // No hacer Sync a menos que sea necesario
+    // await sequelize.sync();
     console.log(`Conectado a la base de datos: ${databaseUrl}`);
   } catch (error) {
     console.log(error);

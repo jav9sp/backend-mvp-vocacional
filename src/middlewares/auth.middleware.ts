@@ -3,7 +3,7 @@ import { verifyAccessToken } from "../utils/jwt.js";
 
 export type AuthContext = {
   userId: number;
-  role: "admin" | "student";
+  role: "student" | "admin" | "superadmin";
   organizationId: number;
 };
 
@@ -54,5 +54,29 @@ export function requireRole(role: AuthContext["role"]) {
       return res.status(403).json({ ok: false, error: "Forbidden" });
     }
     return next();
+  };
+}
+
+export function requireAnyRole(...roles: AuthContext["role"][]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.auth)
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    if (!roles.includes(req.auth.role)) {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+    return next();
+  };
+}
+
+const rank = { student: 1, admin: 2, superadmin: 3 } as const;
+
+export function requireMinRole(min: keyof typeof rank) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.auth)
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    if (rank[req.auth.role] < rank[min]) {
+      return res.status(403).json({ ok: false, error: "Forbidden" });
+    }
+    next();
   };
 }

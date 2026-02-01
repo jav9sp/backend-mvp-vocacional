@@ -40,7 +40,7 @@ type NemJsonRow = {
 
 async function main() {
   // Seguridad local (opcional)
-  const url = process.env.DATABASE_URL ?? "";
+  const url = process.env.DATABASE_DEV ?? "";
   if (!url) throw new Error("DATABASE_URL no está definido.");
   if (!url.includes("localhost") && !url.includes("127.0.0.1")) {
     throw new Error("🚨 Seed bloqueado: DATABASE_URL no es local");
