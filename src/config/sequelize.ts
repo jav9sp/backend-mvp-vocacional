@@ -14,6 +14,9 @@ import StudentProfile from "../models/StudentProfile.model.js";
 import NemConversion from "../models/NemConversion.model.js";
 import PaesScoreRecord from "../models/PaesScoreRecord.model.js";
 import OfferFlat from "../models/OfferFlat.model.js";
+import AdmissionProcess from "../models/AdmissionProcess.model.js";
+import ProgramOffer from "../models/ProgramOffer.model.js";
+import StudentFavoriteOffer from "../models/StudentFavoriteOffer.model.js";
 
 dotenv.config();
 
@@ -42,6 +45,9 @@ export const sequelize = new Sequelize(databaseUrl, {
     NemConversion,
     PaesScoreRecord,
     OfferFlat,
+    AdmissionProcess,
+    ProgramOffer,
+    StudentFavoriteOffer,
   ],
 });
 

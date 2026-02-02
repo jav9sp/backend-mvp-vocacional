@@ -18,6 +18,10 @@ class OfferFlat extends Model {
   declare offerKey: string;
 
   @AllowNull(false)
+  @Column({ type: DataType.INTEGER, field: "admission_process_id" })
+  declare admissionProcessId: number;
+
+  @AllowNull(false)
   @Column({ type: DataType.INTEGER, field: "year" })
   declare year: number;
 

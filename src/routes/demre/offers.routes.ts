@@ -130,7 +130,7 @@ router.get("/locations", async (req, res) => {
 
   const where: any = {};
   if (q.year) where.year = q.year;
-  if (q.institutionId) where.institutionId = q.institutionId;
+  if (q.institutionId) where.institution_id = q.institutionId;
 
   const rows = await OfferFlat.findAll({
     where,
