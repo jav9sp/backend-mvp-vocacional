@@ -60,6 +60,14 @@ class OfferFlat extends Model {
   @Column({ type: DataType.STRING(255), field: "career" })
   declare career: string;
 
+  @AllowNull(true)
+  @Column({ type: DataType.STRING(60), field: "vocational_area_key" })
+  declare vocationalAreaKey: string;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING(60), field: "vocational_area_name" })
+  declare vocationalAreaName: string;
+
   // En la vista es location_id y lugar (no location_name)
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, field: "location_id" })

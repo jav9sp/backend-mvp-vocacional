@@ -23,16 +23,6 @@ const offersQuerySchema = z
   })
   .strict();
 
-// const offersQuerySchema = z.object({
-//   year: z.coerce.number().int().optional(),
-//   institution_id: z.coerce.number().int().optional(),
-//   location_id: z.coerce.number().int().optional(),
-//   q: z.string().trim().min(1).optional(),
-//   only_pace: z.coerce.boolean().optional(),
-//   only_gratuity: z.coerce.boolean().optional(),
-//   only_special_test: z.coerce.boolean().optional(),
-// });
-
 router.get("/", async (req, res) => {
   const parsed = offersQuerySchema.safeParse(req.query);
   if (!parsed.success) {
