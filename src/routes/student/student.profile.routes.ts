@@ -1,19 +1,19 @@
 import { Router } from "express";
 import {
-  changeMyPassword,
-  getMyProfile,
-  updateMyProfile,
+  studentChangeMyPassword,
+  studentGetMyProfile,
+  studentUpdateMyProfile,
 } from "../../controllers/student/student.profile.controller.js";
-import { requireStudentMe } from "../../middlewares/requiereStudentMe.middleware.js";
+import { requireMe } from "../../middlewares/requireMe.middleware.js";
 
 const router = Router();
 
-router.use("/", requireStudentMe);
+router.use(requireMe());
 
-router.get("/", getMyProfile);
+router.get("/", studentGetMyProfile);
 
-router.patch("/", updateMyProfile);
+router.patch("/", studentUpdateMyProfile);
 
-router.patch("/password", changeMyPassword);
+router.patch("/password", studentChangeMyPassword);
 
 export default router;

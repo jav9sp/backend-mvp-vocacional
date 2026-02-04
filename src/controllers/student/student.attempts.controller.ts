@@ -326,7 +326,7 @@ export async function finishAttempt(
     if (answerCount !== expectedCount) {
       return res.status(400).json({
         ok: false,
-        error: "Attempt not complete",
+        error: `Attempt not complete ${answerCount} / ${expectedCount}`,
         answeredCount: answerCount,
         expected: expectedCount,
       });

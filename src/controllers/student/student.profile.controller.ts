@@ -19,7 +19,7 @@ const UpdateMyProfileBodySchema = z.object({
   nemAvg: z.number().min(4.0).max(7.0).optional(),
 });
 
-export async function getMyProfile(
+export async function studentGetMyProfile(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -45,7 +45,6 @@ export async function getMyProfile(
 
     return res.json({
       ok: true,
-      _debug: "getMyProfile v2",
       user: {
         id: user.id,
         rut: user.rut,
@@ -91,7 +90,7 @@ async function resolveNemScore(params: {
   return { nemAvgStr, nemScore: row.nemScore, rankingScore: row.nemScore };
 }
 
-export async function updateMyProfile(
+export async function studentUpdateMyProfile(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -232,7 +231,7 @@ const ChangePasswordBodySchema = z.object({
   newPassword: z.string().min(6).max(200),
 });
 
-export async function changeMyPassword(
+export async function studentChangeMyPassword(
   req: Request,
   res: Response,
   next: NextFunction,

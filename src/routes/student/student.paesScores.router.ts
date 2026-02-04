@@ -5,11 +5,11 @@ import {
   listMyPaesScores,
   updateMyPaesScore,
 } from "../../controllers/student/student.paesScores.controller.js";
-import { requireStudentMe } from "../../middlewares/requiereStudentMe.middleware.js";
+import { requireMe } from "../../middlewares/requireMe.middleware.js";
 
 const router = Router();
 
-router.use("/", requireStudentMe);
+router.use("/", requireMe);
 
 router.get("/", listMyPaesScores);
 

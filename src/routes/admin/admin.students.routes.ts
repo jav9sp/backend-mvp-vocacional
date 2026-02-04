@@ -5,7 +5,7 @@ import {
   adminPatchStudent,
   adminResetStudentPassword,
 } from "../../controllers/admin/admin.students.controller.js";
-import { requiereStudent } from "../../middlewares/requiereStudent.middleware.js";
+import { requireStudent } from "../../middlewares/requiereStudent.middleware.js";
 
 const router = Router();
 
@@ -13,10 +13,12 @@ router.get("/", adminGetStudents);
 
 // TODO: Agregar endpoint para subir estudiantes desde la vista de estudiantes
 
-router.use("/:studentId", requiereStudent);
+router.use("/:studentId", requireStudent);
 
 router.get("/:studentId", adminGetStudentDetail);
+
 router.patch("/:studentId", adminPatchStudent);
+
 router.post("/:studentId/reset-password", adminResetStudentPassword);
 
 export default router;

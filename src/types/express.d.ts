@@ -6,9 +6,11 @@ import { SafeUser } from "./dtos.js";
 declare global {
   namespace Express {
     interface Request {
+      me?: SafeUser;
       admin?: SafeUser;
       student?: SafeUser;
       userModel?: User;
+      studentModel?: User;
       period?: Period;
       attempt?: Attempt;
     }

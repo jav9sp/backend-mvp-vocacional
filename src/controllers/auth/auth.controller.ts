@@ -58,6 +58,7 @@ export async function login(req: Request, res: Response) {
       organizationName: org.name,
       role: user.role,
       name: user.name,
+      rut: user.rut,
       email: user.email,
       mustChangePassword: user.mustChangePassword,
     },

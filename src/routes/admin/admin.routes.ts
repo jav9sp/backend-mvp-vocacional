@@ -7,6 +7,7 @@ import { adminListTests } from "../../controllers/admin/admin.tests.controller.j
 import periodsRouter from "./admin.periods.routes.js";
 import studentsRouter from "./admin.students.routes.js";
 import attemptsRouter from "./admin.attempts.routes.js";
+import adminProfileRouter from "./admin.profile.routes.js";
 
 const router = Router();
 
@@ -21,5 +22,7 @@ router.use("/periods", periodsRouter);
 router.use("/students", studentsRouter);
 
 router.use("/attempts", attemptsRouter);
+
+router.use("/profile", adminProfileRouter);
 
 export default router;

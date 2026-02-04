@@ -10,10 +10,6 @@ import { normalizeRut } from "../../utils/rut.js";
 
 type DerivedStatus = "not_started" | "in_progress" | "finished";
 
-const ParamsSchema = z.object({
-  studentId: z.coerce.number().int().positive(),
-});
-
 const PatchStudentSchema = z.object({
   name: z.string().trim().min(2).max(120).optional(),
   email: z.email().max(180).optional(),
@@ -463,7 +459,7 @@ export async function adminPatchStudent(
 
     const patch = b.data;
 
-    const student = req.userModel;
+    const student = req.studentModel;
     if (!student) {
       return res.status(500).json({ ok: false, error: "Student not loaded" });
     }
@@ -508,7 +504,7 @@ export async function adminResetStudentPassword(
   next: NextFunction,
 ) {
   try {
-    const student = req.userModel;
+    const student = req.studentModel;
     if (!student)
       return res.status(500).json({ ok: false, error: "Student not loaded" });
 

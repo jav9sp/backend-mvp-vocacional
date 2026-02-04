@@ -20,7 +20,7 @@ import StudentFavoriteOffer from "../models/StudentFavoriteOffer.model.js";
 
 dotenv.config();
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_DEV;
 
 if (!databaseUrl) throw new Error("DATABASE_URL not found");
 
