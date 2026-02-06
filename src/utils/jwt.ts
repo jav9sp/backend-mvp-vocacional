@@ -3,7 +3,11 @@ import jwt from "jsonwebtoken";
 
 const JwtUserPayloadSchema = z.object({
   sub: z.number(),
-  role: z.union([z.literal("admin"), z.literal("student")]),
+  role: z.union([
+    z.literal("admin"),
+    z.literal("student"),
+    z.literal("superadmin"),
+  ]),
   organizationId: z.number(),
 });
 export type JwtUserPayload = z.infer<typeof JwtUserPayloadSchema>;
