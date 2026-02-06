@@ -18,7 +18,7 @@ import Enrollment from "./Enrollment.model.js";
 import Organization from "./Organization.model.js";
 import StudentProfile from "./StudentProfile.model.js";
 
-export type UserRole = "admin" | "student";
+export type UserRole = "admin" | "student" | "superadmin";
 
 @Table({ tableName: "users", timestamps: true })
 class User extends Model {
