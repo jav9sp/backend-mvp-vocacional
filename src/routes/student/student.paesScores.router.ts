@@ -9,7 +9,7 @@ import { requireMe } from "../../middlewares/requireMe.middleware.js";
 
 const router = Router();
 
-router.use("/", requireMe);
+router.use(requireMe());
 
 router.get("/", listMyPaesScores);
 
