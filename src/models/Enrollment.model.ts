@@ -49,7 +49,7 @@ class Enrollment extends Model {
   @Column(DataType.ENUM("invited", "active", "completed", "removed"))
   declare status: EnrollmentStatus;
 
-  @Column(DataType.JSON)
+  @Column(DataType.JSONB)
   declare meta: Record<string, any> | null;
 
   @BelongsTo(() => Period, { foreignKey: "periodId", as: "period" })

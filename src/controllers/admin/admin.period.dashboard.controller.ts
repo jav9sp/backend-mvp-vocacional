@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { Op, Sequelize, fn, col, literal } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import Enrollment from "../../models/Enrollment.model.js";
 import User from "../../models/User.model.js";
 import Attempt from "../../models/Attempt.model.js";
-import { error } from "node:console";
 
 type StudentStatus = "not_started" | "in_progress" | "finished";
 const STUDENT_STATUSES: StudentStatus[] = [
@@ -87,14 +86,14 @@ export async function getPeriodDashboard(
       CASE
         WHEN EXISTS (
           SELECT 1 FROM attempts a
-          WHERE a.period_id = "enrollment"."period_id"
-            AND a.user_id = "enrollment"."student_user_id"
+          WHERE a.period_id = "Enrollment"."period_id"
+            AND a.user_id = "Enrollment"."student_user_id"
             AND a.status = 'finished'
         ) THEN 'finished'
         WHEN EXISTS (
           SELECT 1 FROM attempts a
-          WHERE a.period_id = "enrollment"."period_id"
-            AND a.user_id = "enrollment"."student_user_id"
+          WHERE a.period_id = "Enrollment"."period_id"
+            AND a.user_id = "Enrollment"."student_user_id"
         ) THEN 'in_progress'
         ELSE 'not_started'
       END
@@ -195,6 +194,7 @@ export async function getPeriodDashboard(
       rows,
     });
   } catch (err) {
-    return next(error);
+    console.error("[getPeriodDashboard] error:", err);
+    return next(err);
   }
 }
