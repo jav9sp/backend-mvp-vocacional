@@ -131,7 +131,6 @@ export async function adminGetStudents(req: Request, res: Response) {
   if (!orgId) return res.status(401).json({ ok: false, error: "Unauthorized" });
 
   const q = String(req.query.q ?? "").trim();
-  const course = String(req.query.course ?? "").trim(); // <- filtro curso
   const page = Math.max(Number(req.query.page ?? 1), 1);
   const pageSizeRaw = Number(req.query.pageSize ?? 25);
   const pageSize = Math.min(Math.max(pageSizeRaw, 1), 200);
@@ -179,133 +178,45 @@ export async function adminGetStudents(req: Request, res: Response) {
         email: s.email,
         enrollmentsCount: 0,
         finishedAttemptsCount: 0,
-        status: "not_started" as DerivedStatus,
-        lastAttempt: null,
       })),
-      courses: [],
     });
   }
 
-  // 3) Enrollments agregados por estudiante (+ filtro curso si viene)
-  // MySQL: JSON_EXTRACT(meta, '$.course') -> '"2A"' (con comillas)
-  const enrollmentWhere: any = {
-    periodId: { [Op.in]: periodIds },
-    studentUserId: { [Op.in]: studentIds },
-  };
-
-  if (course) {
-    enrollmentWhere[Op.and] = [
-      // comparamos contra `"curso"` porque JSON_EXTRACT devuelve string JSON
-      Enrollment.sequelize!.where(
-        Enrollment.sequelize!.fn(
-          "JSON_EXTRACT",
-          Enrollment.sequelize!.col("meta"),
-          "$.course",
-        ),
-        `"${course}"`,
-      ),
-    ];
-  }
-
+  // 3) Enrollments agregados por estudiante (sin filtro curso)
   const enrollAgg = await Enrollment.findAll({
-    where: enrollmentWhere,
+    where: {
+      periodId: { [Op.in]: periodIds },
+      studentUserId: { [Op.in]: studentIds },
+    },
     attributes: ["studentUserId", [fn("COUNT", col("id")), "enrollmentsCount"]],
     group: ["studentUserId"],
     raw: true,
   });
 
-  // Si filtraste por curso, hay estudiantes que NO tienen enrollment en ese curso:
-  // en ese caso, mejor devolver solo los que tienen match (más consistente con filtro).
-  const allowedStudentIds = new Set<number>(
-    enrollAgg.map((r: any) => Number(r.studentUserId)),
-  );
-
-  const filteredStudents = course
-    ? students.filter((s) => allowedStudentIds.has(s.id))
-    : students;
-
-  const filteredStudentIds = filteredStudents.map((s) => s.id);
-
-  // mapas enrollmentsCount
   const enrollByStudent = new Map<number, number>();
   for (const r of enrollAgg as any[]) {
     enrollByStudent.set(Number(r.studentUserId), Number(r.enrollmentsCount));
   }
 
   // 4) Finished attempts agregados por estudiante (en periodos de esta org)
-  const finishedAgg = filteredStudentIds.length
-    ? await Attempt.findAll({
-        where: {
-          periodId: { [Op.in]: periodIds },
-          userId: { [Op.in]: filteredStudentIds },
-          status: "finished",
-        },
-        attributes: [
-          "userId",
-          [fn("COUNT", col("id")), "finishedAttemptsCount"],
-        ],
-        group: ["userId"],
-        raw: true,
-      })
-    : [];
+  const finishedAgg = await Attempt.findAll({
+    where: {
+      periodId: { [Op.in]: periodIds },
+      userId: { [Op.in]: studentIds },
+      status: "finished",
+    },
+    attributes: ["userId", [fn("COUNT", col("id")), "finishedAttemptsCount"]],
+    group: ["userId"],
+    raw: true,
+  });
 
   const finishedByStudent = new Map<number, number>();
   for (const r of finishedAgg as any[]) {
     finishedByStudent.set(Number(r.userId), Number(r.finishedAttemptsCount));
   }
 
-  // 5) Último attempt por estudiante (en esta org)
-  // MVP: traemos todos y hacemos "reduce" (ok para pageSize<=200)
-  const attempts = filteredStudentIds.length
-    ? await Attempt.findAll({
-        where: {
-          periodId: { [Op.in]: periodIds },
-          userId: { [Op.in]: filteredStudentIds },
-        },
-        attributes: [
-          "id",
-          "userId",
-          "status",
-          "answeredCount",
-          "createdAt",
-          "finishedAt",
-        ],
-        order: [["createdAt", "DESC"]],
-      })
-    : [];
-
-  const lastAttemptByUserId = new Map<number, any>();
-  for (const a of attempts as any[]) {
-    if (!lastAttemptByUserId.has(a.userId))
-      lastAttemptByUserId.set(a.userId, a);
-  }
-
-  // 6) Cursos disponibles (para armar el dropdown)
-  // Esto se puede optimizar; para MVP lo armamos desde enrollments del scope
-  const allEnrollments = await Enrollment.findAll({
-    where: {
-      periodId: { [Op.in]: periodIds },
-      studentUserId: { [Op.in]: studentIds },
-    },
-    attributes: ["meta"],
-    raw: true,
-  });
-
-  const coursesSet = new Set<string>();
-  for (const e of allEnrollments as any[]) {
-    const c =
-      e.meta && (e.meta as any).course
-        ? String((e.meta as any).course).trim()
-        : "";
-    if (c) coursesSet.add(c);
-  }
-  const courses = Array.from(coursesSet).sort((a, b) => a.localeCompare(b));
-
-  // 7) Response rows
-  const rows = filteredStudents.map((s) => {
-    const last = lastAttemptByUserId.get(s.id) ?? null;
-    const status = normalizeStatusFromAttempt(last);
-
+  // 5) Response rows
+  const rows = students.map((s) => {
     return {
       id: s.id,
       rut: s.rut,
@@ -314,17 +225,6 @@ export async function adminGetStudents(req: Request, res: Response) {
 
       enrollmentsCount: enrollByStudent.get(s.id) ?? 0,
       finishedAttemptsCount: finishedByStudent.get(s.id) ?? 0,
-
-      status,
-      lastAttempt: last
-        ? {
-            id: last.id,
-            status: last.status,
-            answeredCount: last.answeredCount,
-            createdAt: last.createdAt,
-            finishedAt: last.finishedAt,
-          }
-        : null,
     };
   });
 
@@ -332,8 +232,7 @@ export async function adminGetStudents(req: Request, res: Response) {
     ok: true,
     page,
     pageSize,
-    total: course ? rows.length : total, // MVP: si filtras por curso, total real requeriría otra query
-    courses,
+    total,
     rows,
   });
 }
