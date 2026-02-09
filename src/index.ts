@@ -10,6 +10,7 @@ import { connectDB } from "./config/sequelize.js";
 import authRoutes from "./routes/auth/auth.routes.js";
 import adminRoutes from "./routes/admin/admin.routes.js";
 import studentRouter from "./routes/student/student.routes.js";
+import superadminRoutes from "./routes/superadmin/superadmin.routes.js";
 import offersRouter from "./routes/offers/offers.routes.js";
 
 const app = express();
@@ -49,6 +50,7 @@ app.get("/health/db", async (_req, res) => {
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/student", studentRouter);
+app.use("/superadmin", superadminRoutes);
 app.use("/offers", offersRouter);
 
 // (Opcional) 404 consistente

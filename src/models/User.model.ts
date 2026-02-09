@@ -40,7 +40,7 @@ class User extends Model {
 
   @AllowNull(false)
   @Index("idx_users_role")
-  @Column(DataType.ENUM("admin", "student"))
+  @Column(DataType.ENUM("admin", "student", "superadmin"))
   declare role: UserRole;
 
   @AllowNull(false)

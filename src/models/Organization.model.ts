@@ -18,6 +18,9 @@ class Organization extends Model {
   @AllowNull(false)
   @Column(DataType.STRING(180))
   declare name: string;
+
+  @Column(DataType.DATE)
+  declare deletedAt?: Date | null;
 }
 
 export default Organization;

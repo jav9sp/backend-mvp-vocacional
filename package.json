@@ -9,10 +9,7 @@
     "start": "node dist/index.js",
     "structure": "node --loader ts-node/esm src/scripts/generate-structure.ts",
     "analyze:md": "node --loader ts-node/esm src/scripts/analyze-report.ts",
-    "map:functions": "node --loader ts-node/esm src/scripts/function-map.ts",
-    "migrate": "node-pg-migrate up",
-    "migrate:down": "node-pg-migrate down",
-    "migrate:prod": "node-pg-migrate up --no-lock"
+    "map:functions": "node --loader ts-node/esm src/scripts/function-map.ts"
   },
   "keywords": [],
   "author": "Francisco Fuentes Campos",
