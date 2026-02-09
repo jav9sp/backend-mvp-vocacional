@@ -17,6 +17,10 @@ import OfferFlat from "../models/OfferFlat.model.js";
 import AdmissionProcess from "../models/AdmissionProcess.model.js";
 import ProgramOffer from "../models/ProgramOffer.model.js";
 import StudentFavoriteOffer from "../models/StudentFavoriteOffer.model.js";
+import CaasQuestion from "../models/CaasQuestion.model.js";
+import CaasAnswer from "../models/CaasAnswer.model.js";
+import CaasOpenAnswer from "../models/CaasOpenAnswer.model.js";
+import CaasResult from "../models/CaasResult.model.js";
 
 dotenv.config();
 
@@ -48,6 +52,10 @@ export const sequelize = new Sequelize(databaseUrl, {
     AdmissionProcess,
     ProgramOffer,
     StudentFavoriteOffer,
+    CaasQuestion,
+    CaasAnswer,
+    CaasOpenAnswer,
+    CaasResult,
   ],
 });
 

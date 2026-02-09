@@ -3,6 +3,7 @@ import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
 
 import enrollmentsRouter from "./student.enrollments.router.js";
 import attemptsRouter from "./student.attempts.routes.js";
+import caasAttemptsRouter from "./student.caasAttempts.routes.js";
 import resultsRouter from "./student.results.routes.js";
 import profileRouter from "./student.profile.routes.js";
 import paesScoresRouter from "./student.paesScores.router.js";
@@ -15,6 +16,8 @@ router.use(requireAuth, requireRole("student"));
 router.use("/enrollments", enrollmentsRouter);
 
 router.use("/attempts", attemptsRouter);
+
+router.use("/caas-attempts", caasAttemptsRouter);
 
 router.use("/results", resultsRouter);
 

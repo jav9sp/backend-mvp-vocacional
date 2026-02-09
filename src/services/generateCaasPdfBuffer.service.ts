@@ -1,12 +1,12 @@
 import puppeteer from "puppeteer";
 import { Buffer } from "node:buffer";
-import type { InapvReportData } from "../reports/inapv/renderInapvReportHtml.js";
-import { renderInapvReportHtml } from "../reports/inapv/renderInapvReportHtml.js";
+import type { CaasReportData } from "../reports/caas/renderCaasReportHtml.js";
+import { renderCaasReportHtml } from "../reports/caas/renderCaasReportHtml.js";
 
-export async function generateInapvPdfBuffer(
-  data: InapvReportData,
+export async function generateCaasPdfBuffer(
+  data: CaasReportData,
 ): Promise<Buffer> {
-  const html = renderInapvReportHtml(data);
+  const html = renderCaasReportHtml(data);
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -28,7 +28,7 @@ export async function generateInapvPdfBuffer(
       headerTemplate: `<div></div>`,
       footerTemplate: `
         <div style="font-size:9px; color:#64748b; width:100%; padding:0 14mm; display:flex; justify-content:space-between; align-items:center;">
-          <span>Portal Vocacional · INAP-V</span>
+          <span>Portal Vocacional · CAAS</span>
           <span>Página <span class="pageNumber"></span> de <span class="totalPages"></span></span>
         </div>
       `,

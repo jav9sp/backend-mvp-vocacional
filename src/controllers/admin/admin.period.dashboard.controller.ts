@@ -3,6 +3,7 @@ import { Op, Sequelize } from "sequelize";
 import Enrollment from "../../models/Enrollment.model.js";
 import User from "../../models/User.model.js";
 import Attempt from "../../models/Attempt.model.js";
+import Test from "../../models/Test.model.js";
 
 type StudentStatus = "not_started" | "in_progress" | "finished";
 const STUDENT_STATUSES: StudentStatus[] = [
@@ -29,6 +30,9 @@ export async function getPeriodDashboard(
     }
 
     const periodId = period.id;
+    const test = await Test.findByPk(period.testId, {
+      attributes: ["id", "key", "version", "name"],
+    });
 
     const q = String(req.query.q ?? "").trim();
     const course = String(req.query.course ?? "").trim();
@@ -179,6 +183,7 @@ export async function getPeriodDashboard(
         startAt: period.startAt,
         endAt: period.endAt,
         testId: period.testId,
+        testKey: test?.key ?? null,
       },
       counts: {
         studentsCount,

@@ -7,11 +7,7 @@ import Organization from "../../models/Organization.model.js";
 import Attempt from "../../models/Attempt.model.js";
 import Enrollment from "../../models/Enrollment.model.js";
 
-import {
-  CreatePeriodSchema,
-  PeriodIdParamsSchema,
-  UpdatePeriodSchema,
-} from "../../types/schemas.js";
+import { CreatePeriodSchema, UpdatePeriodSchema } from "../../types/schemas.js";
 
 export async function adminListPeriods(req: Request, res: Response) {
   const orgId = req.auth?.organizationId;

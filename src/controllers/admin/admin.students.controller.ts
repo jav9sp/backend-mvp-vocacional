@@ -6,6 +6,7 @@ import User from "../../models/User.model.js";
 import Enrollment from "../../models/Enrollment.model.js";
 import Period from "../../models/Period.model.js";
 import Attempt from "../../models/Attempt.model.js";
+import Test from "../../models/Test.model.js";
 import { normalizeRut } from "../../utils/rut.js";
 
 type DerivedStatus = "not_started" | "in_progress" | "finished";
@@ -287,6 +288,22 @@ export async function adminGetStudentDetail(
         })
       : [];
 
+    const testIds = [
+      ...new Set(enrollments.map((e: any) => Number(e.period?.testId)).filter(Boolean)),
+    ];
+    const tests = testIds.length
+      ? await Test.findAll({
+          where: { id: { [Op.in]: testIds } },
+          attributes: ["id", "key"],
+          raw: true,
+        })
+      : [];
+
+    const testKeyById = new Map<number, string>();
+    for (const t of tests as any[]) {
+      testKeyById.set(Number(t.id), String(t.key));
+    }
+
     // Por si existiera más de 1 attempt por periodo: nos quedamos con el más reciente
     const attemptByPeriodId = new Map<number, any>();
     for (const a of attempts as any[]) {
@@ -311,6 +328,7 @@ export async function adminGetStudentDetail(
           startAt: p.startAt ?? null,
           endAt: p.endAt ?? null,
           testId: p.testId,
+          testKey: testKeyById.get(Number(p.testId)) ?? null,
         },
         attempt: a
           ? {
