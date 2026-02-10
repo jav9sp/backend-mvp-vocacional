@@ -19,11 +19,13 @@ import { uploadXlsx } from "../../middlewares/upload.middleware.js";
 const router = Router();
 
 router.get("/", adminListPeriods);
+
 router.post("/", adminCreatePeriod);
 
 router.use("/:periodId", requireAdminPeriod);
 
 router.get("/:periodId", adminGetPeriodById);
+
 router.patch("/:periodId", adminUpdatePeriod);
 
 router.get("/:periodId/dashboard", getPeriodDashboard);
