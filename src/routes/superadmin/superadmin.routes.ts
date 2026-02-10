@@ -18,6 +18,7 @@ import {
   superadminUpdateAdmin,
   superadminResetAdminPassword,
 } from "../../controllers/superadmin/superadmin.admins.controller.js";
+import superadminProfileRouter from "./superadmin.profile.routes.js";
 
 const router = Router();
 
@@ -40,5 +41,8 @@ router.get("/admins/:id", superadminGetAdmin);
 router.post("/admins", superadminCreateAdmin);
 router.patch("/admins/:id", superadminUpdateAdmin);
 router.post("/admins/:id/reset-password", superadminResetAdminPassword);
+
+// Profile
+router.use("/profile", superadminProfileRouter);
 
 export default router;
