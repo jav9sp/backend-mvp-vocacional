@@ -142,8 +142,7 @@ export async function superadminCreateAdmin(req: Request, res: Response) {
     }
 
     // Generar password si no se provee
-    const rawPassword = password || generatePassword();
-    const passwordHash = await bcrypt.hash(rawPassword, 10);
+    const passwordHash = await bcrypt.hash(rut, 10);
 
     const admin = await User.create({
       name,
