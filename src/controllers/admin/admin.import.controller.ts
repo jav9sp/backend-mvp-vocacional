@@ -110,6 +110,8 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
   const errors: Array<{ row: number; message: string; field?: string }> = [];
   const MAX_ERRORS = 200;
 
+  const seenEmails = new Set<string>();
+
   for (let i = 0; i < rows.length; i++) {
     const raw = rows[i];
     const canon = canonicalizeRowKeys(raw);
@@ -117,7 +119,9 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
     const parsedRow = RowSchema.safeParse({
       rut: normalizeRut(String(canon.rut ?? "")),
       nombre: String(canon.nombre ?? "").trim(),
-      email: String(canon.email ?? "").trim(),
+      email: String(canon.email ?? "")
+        .trim()
+        .toLocaleLowerCase(),
       curso: String(canon.curso ?? "").trim(),
     });
 
@@ -135,6 +139,20 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
     }
 
     const { rut, nombre: name, email, curso: course } = parsedRow.data;
+
+    // Detectar email duplicado dentro del mismo archivo
+    if (email) {
+      if (seenEmails.has(email)) {
+        errors.push({
+          row: i + 2,
+          field: "email",
+          message: `Email duplicado en el archivo: ${email}`,
+        });
+        if (errors.length >= MAX_ERRORS) break;
+        continue;
+      }
+      seenEmails.add(email);
+    }
 
     // 1) Buscar user por rut
     let user = await User.findOne({
@@ -177,8 +195,23 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
 
         createdUsers++;
       } catch (e: any) {
-        // por si hay carrera (otro proceso creó el mismo rut justo antes)
         if (e?.name === "SequelizeUniqueConstraintError") {
+          // Determinar qué campo causó el conflicto
+          const conflictFields: string[] =
+            e.errors?.map((err: any) => err.path) ?? [];
+          const isEmailConflict = conflictFields.includes("email");
+
+          if (isEmailConflict) {
+            errors.push({
+              row: i + 2,
+              field: "email",
+              message: `El email "${email}" ya está registrado por otro usuario.`,
+            });
+            if (errors.length >= MAX_ERRORS) break;
+            continue;
+          }
+
+          // Conflicto de RUT (race condition: otro proceso creó el mismo rut)
           const existing = await User.findOne({ where: { rut } });
           if (existing && existing.organizationId !== orgId) {
             blockedOtherOrg++;
@@ -214,8 +247,26 @@ export async function adminImportEnrollmentsXlsx(req: Request, res: Response) {
       }
 
       if (changed) {
-        await user.save();
-        updatedUsers++;
+        try {
+          await user.save();
+          updatedUsers++;
+        } catch (e: any) {
+          if (e?.name === "SequelizeUniqueConstraintError") {
+            const conflictFields: string[] =
+              e.errors?.map((err: any) => err.path) ?? [];
+            errors.push({
+              row: i + 2,
+              field: conflictFields.includes("email") ? "email" : "rut",
+              message: conflictFields.includes("email")
+                ? `El email "${email}" ya está registrado por otro usuario.`
+                : "Conflicto de unicidad al actualizar.",
+            });
+            if (errors.length >= MAX_ERRORS) break;
+            await user.reload();
+            continue;
+          }
+          throw e;
+        }
       }
     }
 

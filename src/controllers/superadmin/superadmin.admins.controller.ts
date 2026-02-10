@@ -23,16 +23,6 @@ const UpdateAdminSchema = z.object({
   mustChangePassword: z.boolean().optional(),
 });
 
-function generatePassword(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
-  let pwd = "";
-  for (let i = 0; i < 12; i++) {
-    pwd += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return pwd;
-}
-
 export async function superadminListAdmins(req: Request, res: Response) {
   try {
     const admins = await User.findAll({
@@ -249,7 +239,7 @@ export async function superadminUpdateAdmin(req: Request, res: Response) {
 
 export async function superadminResetAdminPassword(
   req: Request,
-  res: Response
+  res: Response,
 ) {
   try {
     const id = Number(req.params.id);
@@ -261,8 +251,7 @@ export async function superadminResetAdminPassword(
       return res.status(404).json({ ok: false, error: "Admin not found" });
     }
 
-    const newPassword = generatePassword();
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(admin.rut, 10);
 
     await admin.update({
       passwordHash,
@@ -272,7 +261,6 @@ export async function superadminResetAdminPassword(
     return res.json({
       ok: true,
       message: "Password reset successfully",
-      newPassword,
     });
   } catch (error) {
     console.error("Error in superadminResetAdminPassword:", error);

@@ -276,50 +276,59 @@ const REPORT_CSS = `
   margin-top: var(--space-2);
 }
 
-/* Charts */
+/* Charts - Optimized for compact layout */
 .chart {
-  padding: var(--space-5);
+  padding: var(--space-4);
   background: linear-gradient(135deg, #ffffff 0%, var(--color-surface-2) 100%);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  margin-top: var(--space-5);
+  margin-top: var(--space-3);
+}
+
+.chart:first-of-type {
+  margin-top: var(--space-4);
 }
 
 .chartLabel {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .row {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: var(--space-4);
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-3);
   align-items: center;
-  padding: var(--space-3);
-  padding-right: 40px;
+  padding: 6px var(--space-2);
+  padding-right: 36px;
   border-top: 1px solid var(--color-border);
   background: white;
   border-radius: var(--radius-sm);
-  margin-bottom: var(--space-2);
+  margin-bottom: 6px;
 }
 
 .row:first-child {
   border-top: none;
+  padding-top: 0;
+}
+
+.row:last-child {
+  margin-bottom: 0;
 }
 
 .labelTitle {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .barWrap {
   position: relative;
-  height: 32px;
+  height: 28px;
 }
 
 .grid {
@@ -342,10 +351,10 @@ const REPORT_CSS = `
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  right: -50px;
+  right: -46px;
   font-weight: 900;
-  font-size: 13px;
-  width: 50px;
+  font-size: 12px;
+  width: 42px;
   text-align: left;
 }
 
