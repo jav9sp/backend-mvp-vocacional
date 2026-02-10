@@ -164,7 +164,7 @@ export async function superadminCreateAdmin(req: Request, res: Response) {
         organizationId: admin.organizationId,
         mustChangePassword: admin.mustChangePassword,
       },
-      generatedPassword: rawPassword,
+      generatedPassword: passwordHash,
     });
   } catch (error) {
     console.error("Error in superadminCreateAdmin:", error);
