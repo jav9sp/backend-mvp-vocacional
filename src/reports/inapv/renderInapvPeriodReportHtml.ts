@@ -1,6 +1,7 @@
 import { INAPV_AREA_COLORS, INAPV_AREAS } from "../../data/inapv.data.js";
 import { escapeHtml } from "../../utils/scapeHtml.js";
 import { mergeTopAreas } from "../../utils/inapTopAreas.js";
+import { PREMIUM_BASE_STYLES } from "../shared/premiumStyles.js";
 
 type PeriodReportData = {
   ok: true;
@@ -428,7 +429,10 @@ export function renderInapvPeriodReportHtml(data: {
 <head>
   <meta charset="utf-8" />
   <title>Reporte de periodo</title>
-  <style>${REPORT_CSS}</style>
+  <style>
+${PREMIUM_BASE_STYLES}
+${REPORT_CSS}
+  </style>
 </head>
 <body>
   <div class="doc">

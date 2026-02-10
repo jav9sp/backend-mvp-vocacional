@@ -1,6 +1,7 @@
 import { escapeHtml } from "../../utils/scapeHtml.js";
 import { CAAS_DIMENSIONS } from "../../data/caas.data.js";
 import type { CaasDimension } from "../../data/caas.data.js";
+import { PREMIUM_BASE_STYLES } from "../shared/premiumStyles.js";
 
 export type CaasReportData = {
   student: {
@@ -121,16 +122,19 @@ export function renderCaasReportHtml(data: CaasReportData): string {
 <head>
   <meta charset="UTF-8">
   <title>Reporte CAAS - ${escapeHtml(student.name)}</title>
-  <style>${CAAS_REPORT_CSS}</style>
+  <style>
+${PREMIUM_BASE_STYLES}
+${CAAS_REPORT_CSS}
+  </style>
 </head>
 <body>
   <div class="doc">
     <!-- Header -->
-    <div class="header">
+    <div class="header avoid-break">
       <div>
-        <h1>${escapeHtml(attempt.period.test.name)}</h1>
+        <h1 class="header-title">${escapeHtml(attempt.period.test.name)}</h1>
         <div class="meta">
-          <span>${escapeHtml(student.name)}</span>
+          <span><strong>${escapeHtml(student.name)}</strong></span>
           ${student.email ? `<span>·</span><span>${escapeHtml(student.email)}</span>` : ""}
           <span>·</span>
           <span>${fmtDate(attempt.finishedAt)}</span>
@@ -181,129 +185,209 @@ export function renderCaasReportHtml(data: CaasReportData): string {
 }
 
 const CAAS_REPORT_CSS = `
-@page { size: A4; margin: 14mm; }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #0f172a;
-  font-size: 13px;
-  line-height: 1.6;
-}
-.doc { max-width: 100%; }
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e2e8f0;
-  margin-bottom: 24px;
-}
-h1 { font-size: 22px; font-weight: 900; margin-bottom: 6px; color: #1e293b; }
-.meta { font-size: 12px; color: #64748b; }
-.logo { height: 48px; object-fit: contain; }
-.section { margin-bottom: 28px; break-inside: avoid; }
-h2 {
-  font-size: 17px;
-  font-weight: 700;
-  margin-bottom: 14px;
-  color: #1e293b;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 6px;
-}
-h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+/* CAAS-specific styles - extending premium base */
 
-/* Gauge */
+/* Enhanced header */
+.header {
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-8);
+  border: 1px solid var(--color-border);
+}
+
+.header-title {
+  font-size: 26px;
+  font-weight: 900;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--color-muted);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.meta > span {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Premium gauge with enhanced styling */
 .gauge {
   display: flex;
   justify-content: center;
-  margin: 20px 0;
-}
-.gaugeSvg { width: 200px; height: 120px; }
-.scoreDetail {
-  text-align: center;
-  font-size: 15px;
-  color: #475569;
-  margin-top: 8px;
+  margin: var(--space-8) 0;
+  padding: var(--space-6);
+  background: linear-gradient(135deg, #ffffff 0%, var(--color-surface-2) 100%);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
 }
 
-/* Dimensiones */
-.dimensions { margin-top: 14px; }
+.gaugeSvg {
+  width: 220px;
+  height: 130px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+}
+
+.scoreDetail {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-fg);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  display: inline-block;
+}
+
+/* Dimensions with premium styling */
+.dimensions {
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  background: linear-gradient(135deg, #ffffff 0%, var(--color-surface-2) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
 .dimRow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: var(--space-3);
+  background: white;
+  border-radius: var(--radius-md);
+  transition: transform 0.2s ease;
 }
+
+.dimRow:last-child {
+  margin-bottom: 0;
+}
+
 .dimLabel {
-  min-width: 110px;
+  min-width: 120px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
+
 .dimBar {
   flex: 1;
-  height: 26px;
-  background: #f1f5f9;
-  border-radius: 4px;
+  height: 32px;
+  background: var(--color-surface-3);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
+
 .dimBarFill {
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 8px;
-  font-size: 11px;
-  font-weight: 700;
+  padding-right: 12px;
+  font-size: 12px;
+  font-weight: 900;
   color: white;
   transition: width 0.3s ease;
-}
-.dimScore {
-  min-width: 50px;
-  text-align: right;
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 600;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
 }
 
-/* Interpretación */
-.interpText {
+.dimScore {
+  min-width: 60px;
+  text-align: right;
   font-size: 13px;
-  line-height: 1.7;
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+/* Interpretation section */
+.interpText {
+  font-size: 14px;
+  line-height: 1.8;
   color: #334155;
   text-align: justify;
+  padding: var(--space-5);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--color-primary);
 }
 
-/* Descripciones de dimensiones */
+/* Dimension descriptions */
 .dimDescContainer {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 14px;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
 }
+
 .dimDesc {
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 6px;
-  border-left: 3px solid currentColor;
+  padding: var(--space-5);
+  background: linear-gradient(135deg, #ffffff 0%, var(--color-surface-2) 100%);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid currentColor;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease;
 }
+
+.dimDesc h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
 .dimDesc p {
   font-size: 12px;
   color: #475569;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
-/* Recomendaciones */
+/* Recommendations */
 .recommendations {
-  list-style: disc;
-  padding-left: 20px;
-  margin-top: 10px;
+  list-style: none;
+  padding-left: 0;
+  margin-top: var(--space-4);
 }
+
 .recommendations li {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-4);
   font-size: 13px;
   color: #334155;
-  line-height: 1.6;
+  line-height: 1.7;
+  padding-left: var(--space-6);
+  position: relative;
+}
+
+.recommendations li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--color-success) 0%, #22c55e 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
 }
 
 /* Page break */
@@ -314,8 +398,28 @@ h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
 
 /* Print optimization */
 @media print {
-  .section { break-inside: avoid; }
-  .dimRow { break-inside: avoid; }
-  .dimDesc { break-inside: avoid; }
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .section {
+    break-inside: avoid;
+  }
+
+  .dimRow {
+    break-inside: avoid;
+  }
+
+  .dimDesc {
+    break-inside: avoid;
+  }
+
+  .header,
+  .gauge,
+  .dimensions,
+  .dimDesc {
+    box-shadow: none;
+  }
 }
 `;

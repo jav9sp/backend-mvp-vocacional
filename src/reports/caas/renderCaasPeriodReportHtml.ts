@@ -1,6 +1,7 @@
 import { escapeHtml } from "../../utils/scapeHtml.js";
 import { CAAS_DIMENSIONS } from "../../data/caas.data.js";
 import type { AdminPeriodResultsData } from "../../services/adminGetPeriodResultsData.service.js";
+import { PREMIUM_BASE_STYLES } from "../shared/premiumStyles.js";
 
 type CaasPeriodReportData = {
   ok: true;
@@ -127,7 +128,10 @@ export function renderCaasPeriodReportHtml(payload: CaasPeriodReportData) {
 <head>
   <meta charset="utf-8" />
   <title>Reporte CAAS por periodo</title>
-  <style>${REPORT_CSS}</style>
+  <style>
+${PREMIUM_BASE_STYLES}
+${REPORT_CSS}
+  </style>
 </head>
 <body>
   <div class="top">
