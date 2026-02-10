@@ -31,7 +31,7 @@ export function computeInapvScores(args: {
     }
   };
 
-  // 1) Precalcular máximos posibles por área y por dimensión
+  // 1) Precalculate maximums by area and dimension.
   for (const q of questionsById.values()) {
     const { area, dim: dims } = q;
     ensureArea(area);
@@ -44,7 +44,7 @@ export function computeInapvScores(args: {
     maxByAreaDim[area].total += maxI + maxA;
   }
 
-  // 2) Sumar puntajes efectivos según respuestas "sí"
+  // 2) Add achieved points for "yes" answers.
   for (const { questionId, value } of answers) {
     if (!value) continue;
 
@@ -61,7 +61,7 @@ export function computeInapvScores(args: {
       scoresByAreaDim[area].interes + scoresByAreaDim[area].aptitud;
   }
 
-  // 3) Porcentajes (0..100) por área, calculados por dimensión con su propio máximo
+  // 3) Percentages (0..100) by area and dimension.
   const percentByAreaDim: PercentByAreaDim = {};
   for (const area of Object.keys(scoresByAreaDim)) {
     const s = scoresByAreaDim[area];
@@ -72,23 +72,33 @@ export function computeInapvScores(args: {
     percentByAreaDim[area] = {
       interes: toPct(s.interes, m.interes),
       aptitud: toPct(s.aptitud, m.aptitud),
-      // "total" opcional: porcentaje sobre el total posible del área
       total: toPct(s.total, m.total),
     };
   }
 
-  // 4) Top 3 (si el ranking debe basarse en TOTAL en puntos, dejamos esto igual)
-  const topAreas = Object.keys(scoresByAreaDim)
-    .sort((a, b) => {
-      const A = scoresByAreaDim[a];
-      const B = scoresByAreaDim[b];
+  // 4) Top 3 by dimension.
+  const sortAreasByDim = (dim: "interes" | "aptitud") => {
+    const otherDim = dim === "interes" ? "aptitud" : "interes";
+    return Object.keys(percentByAreaDim)
+      .sort((a, b) => {
+        const A = percentByAreaDim[a];
+        const B = percentByAreaDim[b];
 
-      if (B.total !== A.total) return B.total - A.total;
-      if (B.interes !== A.interes) return B.interes - A.interes;
-      if (B.aptitud !== A.aptitud) return B.aptitud - A.aptitud;
-      return a.localeCompare(b);
-    })
-    .slice(0, 3);
+        if (B[dim] !== A[dim]) return B[dim] - A[dim];
+        if (B[otherDim] !== A[otherDim]) return B[otherDim] - A[otherDim];
+        return a.localeCompare(b);
+      })
+      .slice(0, 3);
+  };
 
-  return { scoresByAreaDim, maxByAreaDim, percentByAreaDim, topAreas };
+  const topAreasByInteres = sortAreasByDim("interes");
+  const topAreasByAptitud = sortAreasByDim("aptitud");
+
+  return {
+    scoresByAreaDim,
+    maxByAreaDim,
+    percentByAreaDim,
+    topAreasByInteres,
+    topAreasByAptitud,
+  };
 }

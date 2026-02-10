@@ -60,7 +60,11 @@ class InapResult extends Model {
 
   @AllowNull(false)
   @Column(DataType.JSONB)
-  declare topAreas: string[];
+  declare topAreasByInteres: string[];
+
+  @AllowNull(false)
+  @Column(DataType.JSONB)
+  declare topAreasByAptitud: string[];
 }
 
 export default InapResult;

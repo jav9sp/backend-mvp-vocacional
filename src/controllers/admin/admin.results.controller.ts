@@ -11,6 +11,7 @@ import { generateInapvPdfBuffer } from "../../services/generateInapvPdfBuffer.se
 import { InapvReportData } from "../../reports/inapv/renderInapvReportHtml.js";
 import { recommendCareers } from "../../utils/recommendCareers.js";
 import { CAREERS_MOCK } from "../../data/careersMock.js";
+import { mergeTopAreas } from "../../utils/inapTopAreas.js";
 import {
   FINAL_CONSIDERATIONS,
   INAPV_AREA_INTERPRETATIONS,
@@ -83,7 +84,8 @@ export async function adminGetAttemptResult(
         attributes: [
           "scoresByAreaDim",
           "percentByAreaDim",
-          "topAreas",
+          "topAreasByInteres",
+          "topAreasByAptitud",
           "createdAt",
         ],
       });
@@ -137,7 +139,8 @@ export async function adminGetAttemptResult(
         ? {
             scoresByAreaDim: result.scoresByAreaDim,
             percentByAreaDim: result.percentByAreaDim,
-            topAreas: result.topAreas,
+            topAreasByInteres: result.topAreasByInteres ?? [],
+            topAreasByAptitud: result.topAreasByAptitud ?? [],
             createdAt: result.createdAt,
           }
         : null,
@@ -217,7 +220,13 @@ export async function adminGetAttemptReportPdf(
     // 2) Result por attemptId
     const result = await InapResult.findOne({
       where: { attemptId: attempt.id },
-      attributes: ["id", "topAreas", "percentByAreaDim", "createdAt"],
+      attributes: [
+        "id",
+        "topAreasByInteres",
+        "topAreasByAptitud",
+        "percentByAreaDim",
+        "createdAt",
+      ],
     });
 
     if (!result) {
@@ -229,7 +238,10 @@ export async function adminGetAttemptReportPdf(
       attributes: ["id", "name", "email"],
     });
 
-    const topAreas = (result.topAreas ?? []).slice(0, 3);
+    const topAreas = mergeTopAreas({
+      topAreasByInteres: result.topAreasByInteres,
+      topAreasByAptitud: result.topAreasByAptitud,
+    }).slice(0, 3);
 
     const careers = recommendCareers({
       percentByAreaDim: result.percentByAreaDim ?? {},
@@ -268,7 +280,8 @@ export async function adminGetAttemptReportPdf(
       result: {
         id: result.id,
         createdAt: result.createdAt,
-        topAreas: topAreas as any,
+        topAreasByInteres: (result.topAreasByInteres ?? []) as any,
+        topAreasByAptitud: (result.topAreasByAptitud ?? []) as any,
         percentByAreaDim: (result.percentByAreaDim ?? {}) as any,
       },
 

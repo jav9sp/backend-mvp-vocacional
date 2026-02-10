@@ -1,5 +1,6 @@
 import { INAPV_AREA_COLORS, INAPV_AREAS } from "../../data/inapv.data.js";
 import { escapeHtml } from "../../utils/scapeHtml.js";
+import { mergeTopAreas } from "../../utils/inapTopAreas.js";
 
 type PeriodReportData = {
   ok: true;
@@ -24,7 +25,8 @@ type PeriodReportData = {
     resultId: number;
     attemptId: number;
     createdAt: string;
-    topAreas: string[];
+    topAreasByInteres: string[];
+    topAreasByAptitud: string[];
     student: { rut: string; name: string; email?: string | null } | null;
   }>;
   generatedAt: Date;
@@ -355,7 +357,8 @@ export function renderInapvPeriodReportHtml(data: {
   };
   rows: Array<{
     attemptId: number;
-    topAreas: string[];
+    topAreasByInteres: string[];
+    topAreasByAptitud: string[];
     createdAt: string;
     student: any;
   }>;
@@ -408,7 +411,10 @@ export function renderInapvPeriodReportHtml(data: {
       </td>
       <td class="mono">${escapeHtml(String(r.attemptId))}</td>
       <td>${escapeHtml(fmtDateCL(r.createdAt))}</td>
-      <td>${(r.topAreas ?? [])
+      <td>${mergeTopAreas({
+        topAreasByInteres: r.topAreasByInteres,
+        topAreasByAptitud: r.topAreasByAptitud,
+      })
         .slice(0, 3)
         .map((k) => `<span class="chip">${escapeHtml(k.toUpperCase())}</span>`)
         .join(" ")}</td>

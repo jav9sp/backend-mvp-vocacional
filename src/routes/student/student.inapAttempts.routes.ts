@@ -5,7 +5,7 @@ import {
   saveAttemptAnswers,
   finishAttempt,
   getAttemptResult,
-} from "../../controllers/student/student.attempts.controller.js";
+} from "../../controllers/student/student.inapAttempts.controller.js";
 
 import { requiereStudentAttempt } from "../../middlewares/requiereAttempt.js";
 
@@ -268,6 +268,7 @@ router.get("/:attemptId", getAttemptContext);
 router.get("/:attemptId/result", getAttemptResult);
 
 router.get("/:attemptId/answers", getAttemptAnswers);
+
 router.put("/:attemptId/answers", saveAttemptAnswers);
 
 router.post("/:attemptId/finish", finishAttempt);

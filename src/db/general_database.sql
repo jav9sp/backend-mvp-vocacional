@@ -196,7 +196,8 @@ CREATE TABLE inap_results (
   scores_by_area_dim  jsonb NOT NULL,
   max_by_area_dim     jsonb NOT NULL,
   percent_by_area_dim jsonb NOT NULL,
-  top_areas           jsonb NOT NULL,
+  top_areas_by_interes jsonb NOT NULL,
+  top_areas_by_aptitud jsonb NOT NULL,
   created_at          timestamptz NOT NULL DEFAULT now(),
   updated_at          timestamptz NOT NULL DEFAULT now(),
 

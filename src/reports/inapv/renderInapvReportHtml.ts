@@ -1,5 +1,6 @@
 import { INAPV_AREA_COLORS, INAPV_AREAS } from "../../data/inapv.data.js";
 import { escapeHtml } from "../../utils/scapeHtml.js";
+import { mergeTopAreas } from "../../utils/inapTopAreas.js";
 
 type AreaKey =
   | "adm"
@@ -42,7 +43,8 @@ export type InapvReportData = {
   result: {
     id: number;
     createdAt: string | Date;
-    topAreas: AreaKey[];
+    topAreasByInteres: AreaKey[];
+    topAreasByAptitud: AreaKey[];
     percentByAreaDim: Record<string, Percent>;
   };
 
@@ -371,7 +373,10 @@ body {
 `;
 
 export function renderInapvReportHtml(data: InapvReportData) {
-  const topAreas = (data.result.topAreas ?? []).slice(0, 3);
+  const topAreas = mergeTopAreas({
+    topAreasByInteres: data.result.topAreasByInteres,
+    topAreasByAptitud: data.result.topAreasByAptitud,
+  }).slice(0, 3);
 
   const topCardsHtml = topAreas
     .map((k) => {

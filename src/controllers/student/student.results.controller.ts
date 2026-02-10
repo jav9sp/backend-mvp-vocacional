@@ -11,6 +11,7 @@ import Period from "../../models/Period.model.js";
 import { generateInapvPdfBuffer } from "../../services/generateInapvPdfBuffer.service.js";
 import { InapvReportData } from "../../reports/inapv/renderInapvReportHtml.js";
 import { recommendCareers } from "../../utils/recommendCareers.js";
+import { mergeTopAreas } from "../../utils/inapTopAreas.js";
 import {
   INAPV_GENERAL_EXPLANATION,
   INAPV_AREA_INTERPRETATIONS,
@@ -40,7 +41,8 @@ export async function listStudentResults(
           "scoresByAreaDim",
           "maxByAreaDim",
           "percentByAreaDim",
-          "topAreas",
+          "topAreasByInteres",
+          "topAreasByAptitud",
           "createdAt",
         ],
         include: [
@@ -115,7 +117,8 @@ export async function listStudentResults(
       scoresByAreaDim: r.scoresByAreaDim,
       maxByAreaDim: r.maxByAreaDim,
       percentByAreaDim: r.percentByAreaDim,
-      topAreas: r.topAreas,
+      topAreasByInteres: r.topAreasByInteres ?? [],
+      topAreasByAptitud: r.topAreasByAptitud ?? [],
 
       totalScore: null,
       maxScore: null,
@@ -151,7 +154,8 @@ export async function listStudentResults(
       scoresByAreaDim: null,
       maxByAreaDim: null,
       percentByAreaDim: null,
-      topAreas: [],
+      topAreasByInteres: [],
+      topAreasByAptitud: [],
 
       totalScore: toFiniteNumber(r.totalScore),
       maxScore: toFiniteNumber(r.maxScore),
@@ -226,7 +230,8 @@ export async function getResultDetails(
           "scoresByAreaDim",
           "maxByAreaDim",
           "percentByAreaDim",
-          "topAreas",
+          "topAreasByInteres",
+          "topAreasByAptitud",
           "createdAt",
         ],
         include: [
@@ -325,7 +330,8 @@ export async function getResultDetails(
           scoresByAreaDim: inapResult.scoresByAreaDim,
           maxByAreaDim: inapResult.maxByAreaDim,
           percentByAreaDim: inapResult.percentByAreaDim,
-          topAreas: inapResult.topAreas,
+          topAreasByInteres: inapResult.topAreasByInteres ?? [],
+          topAreasByAptitud: inapResult.topAreasByAptitud ?? [],
 
           totalScore: null,
           maxScore: null,
@@ -366,7 +372,8 @@ export async function getResultDetails(
         scoresByAreaDim: null,
         maxByAreaDim: null,
         percentByAreaDim: null,
-        topAreas: [],
+        topAreasByInteres: [],
+        topAreasByAptitud: [],
 
         totalScore: toFiniteNumber(result.totalScore),
         maxScore: toFiniteNumber(result.maxScore),
@@ -433,7 +440,13 @@ export async function getResultPdf(
     // - el period pertenece a la org del user (scoping)
     const result = await InapResult.findOne({
       where: { id: resultsId },
-      attributes: ["id", "topAreas", "percentByAreaDim", "createdAt"],
+      attributes: [
+        "id",
+        "topAreasByInteres",
+        "topAreasByAptitud",
+        "percentByAreaDim",
+        "createdAt",
+      ],
       include: [
         {
           model: Attempt,
@@ -478,7 +491,10 @@ export async function getResultPdf(
       attributes: ["id", "name", "email"],
     });
 
-    const topAreas = (result.topAreas ?? []).slice(0, 3);
+    const topAreas = mergeTopAreas({
+      topAreasByInteres: result.topAreasByInteres,
+      topAreasByAptitud: result.topAreasByAptitud,
+    }).slice(0, 3);
 
     const careers = recommendCareers({
       percentByAreaDim: (result.percentByAreaDim ?? {}) as any,
@@ -518,7 +534,8 @@ export async function getResultPdf(
       result: {
         id: result.id,
         createdAt: result.createdAt,
-        topAreas: topAreas as any,
+        topAreasByInteres: (result.topAreasByInteres ?? []) as any,
+        topAreasByAptitud: (result.topAreasByAptitud ?? []) as any,
         percentByAreaDim: (result.percentByAreaDim ?? {}) as any,
       },
 

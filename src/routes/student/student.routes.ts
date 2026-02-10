@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
 
 import enrollmentsRouter from "./student.enrollments.router.js";
-import attemptsRouter from "./student.attempts.routes.js";
+import inapAttemptsRouter from "./student.inapAttempts.routes.js";
 import caasAttemptsRouter from "./student.caasAttempts.routes.js";
 import resultsRouter from "./student.results.routes.js";
 import profileRouter from "./student.profile.routes.js";
@@ -15,7 +15,7 @@ router.use(requireAuth, requireRole("student"));
 
 router.use("/enrollments", enrollmentsRouter);
 
-router.use("/attempts", attemptsRouter);
+router.use("/inap-attempts", inapAttemptsRouter);
 
 router.use("/caas-attempts", caasAttemptsRouter);
 

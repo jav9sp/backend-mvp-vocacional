@@ -19,7 +19,8 @@ export type PeriodResultsRow = {
   resultId: number;
   attemptId: number;
   createdAt: string;
-  topAreas: string[];
+  topAreasByInteres: string[];
+  topAreasByAptitud: string[];
   attempt: {
     id: number;
     answeredCount: number;
@@ -191,7 +192,13 @@ export async function adminGetPeriodResultsData(
 
   // 4) Tabla paginada (resultados del periodo) + student + period + test
   const { rows: resultRows, count: total } = await InapResult.findAndCountAll({
-    attributes: ["id", "attemptId", "topAreas", "createdAt"],
+    attributes: [
+      "id",
+      "attemptId",
+      "topAreasByInteres",
+      "topAreasByAptitud",
+      "createdAt",
+    ],
     include: [
       {
         model: Attempt,
@@ -240,7 +247,8 @@ export async function adminGetPeriodResultsData(
       resultId: r.id,
       attemptId: r.attemptId,
       createdAt: new Date(r.createdAt).toISOString(),
-      topAreas: r.topAreas ?? [],
+      topAreasByInteres: r.topAreasByInteres ?? [],
+      topAreasByAptitud: r.topAreasByAptitud ?? [],
       attempt: {
         id: attempt.id,
         answeredCount: attempt.answeredCount,

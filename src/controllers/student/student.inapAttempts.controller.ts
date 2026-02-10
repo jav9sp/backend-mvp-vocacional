@@ -10,7 +10,7 @@ import Period from "../../models/Period.model.js";
 import Test from "../../models/Test.model.js";
 
 import { INAPV_AREAS } from "../../data/inapv.data.js";
-import { computeInapvScores } from "../../services/scoring.service.js";
+import { computeInapvScores } from "../../services/inapScoring.service.js";
 import { SaveAnswersBodySchema } from "../../validators/attempts.schemas.js";
 
 export async function getAttemptContext(
@@ -285,7 +285,8 @@ export async function finishAttempt(
           "scoresByAreaDim",
           "maxByAreaDim",
           "percentByAreaDim",
-          "topAreas",
+          "topAreasByInteres",
+          "topAreasByAptitud",
           "createdAt",
         ],
       });
@@ -303,7 +304,8 @@ export async function finishAttempt(
             scoresByAreaDim: existingResult.scoresByAreaDim,
             maxByAreaDim: existingResult.maxByAreaDim,
             percentByAreaDim: existingResult.percentByAreaDim,
-            topAreas: existingResult.topAreas,
+            topAreasByInteres: existingResult.topAreasByInteres ?? [],
+            topAreasByAptitud: existingResult.topAreasByAptitud ?? [],
             createdAt: existingResult.createdAt,
           },
         });
@@ -364,7 +366,8 @@ export async function finishAttempt(
             scoresByAreaDim: computed.scoresByAreaDim,
             maxByAreaDim: computed.maxByAreaDim,
             percentByAreaDim: computed.percentByAreaDim,
-            topAreas: computed.topAreas,
+            topAreasByInteres: computed.topAreasByInteres,
+            topAreasByAptitud: computed.topAreasByAptitud,
           },
           transaction: t,
         });
@@ -373,7 +376,8 @@ export async function finishAttempt(
           result.scoresByAreaDim = computed.scoresByAreaDim;
           result.maxByAreaDim = computed.maxByAreaDim;
           result.percentByAreaDim = computed.percentByAreaDim;
-          result.topAreas = computed.topAreas;
+          result.topAreasByInteres = computed.topAreasByInteres;
+          result.topAreasByAptitud = computed.topAreasByAptitud;
           await result.save({ transaction: t });
         }
 
@@ -400,7 +404,8 @@ export async function finishAttempt(
         "scoresByAreaDim",
         "maxByAreaDim",
         "percentByAreaDim",
-        "topAreas",
+        "topAreasByInteres",
+        "topAreasByAptitud",
         "createdAt",
       ],
     });
@@ -427,7 +432,8 @@ export async function finishAttempt(
         scoresByAreaDim: savedResult.scoresByAreaDim,
         maxByAreaDim: savedResult.maxByAreaDim,
         percentByAreaDim: savedResult.percentByAreaDim,
-        topAreas: savedResult.topAreas,
+        topAreasByInteres: savedResult.topAreasByInteres ?? [],
+        topAreasByAptitud: savedResult.topAreasByAptitud ?? [],
         createdAt: savedResult.createdAt,
       },
     });
@@ -479,7 +485,8 @@ export async function getAttemptResult(
         "scoresByAreaDim",
         "maxByAreaDim",
         "percentByAreaDim",
-        "topAreas",
+        "topAreasByInteres",
+        "topAreasByAptitud",
         "createdAt",
       ],
     });
@@ -490,7 +497,6 @@ export async function getAttemptResult(
         error: "Result missing for finished attempt",
       });
     }
-
     return res.json({
       ok: true,
       status: "finished",
@@ -503,7 +509,8 @@ export async function getAttemptResult(
         scoresByAreaDim: result.scoresByAreaDim,
         maxByAreaDim: result.maxByAreaDim,
         percentByAreaDim: result.percentByAreaDim,
-        topAreas: result.topAreas,
+        topAreasByInteres: result.topAreasByInteres ?? [],
+        topAreasByAptitud: result.topAreasByAptitud ?? [],
         createdAt: result.createdAt,
       },
     });
