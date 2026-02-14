@@ -337,35 +337,7 @@ body {
 `;
 
 // export principal
-export function renderInapvPeriodReportHtml(data: {
-  ok: true;
-  period: { id: number; name: string; status: string; testId: number };
-  counts: {
-    studentsCount: number;
-    finishedCount: number;
-    inProgressCount: number;
-    notStartedCount: number;
-  };
-  resultsAvailableCount: number;
-  aggregate: {
-    topAreas: string[];
-    byArea: Array<{
-      area: string;
-      pctAvg: { interes: number; aptitud: number; total: number };
-      scoreSum: any;
-      maxSum: any;
-    }>;
-  };
-  rows: Array<{
-    attemptId: number;
-    topAreasByInteres: string[];
-    topAreasByAptitud: string[];
-    createdAt: string;
-    student: any;
-  }>;
-  generatedAt: Date;
-  logoDataUri?: string | null;
-}) {
+export function renderInapvPeriodReportHtml(data: PeriodReportData) {
   const byAreaSorted = [...(data.aggregate.byArea ?? [])].sort(
     (a, b) => (b.pctAvg?.total ?? 0) - (a.pctAvg?.total ?? 0),
   );

@@ -9,8 +9,7 @@ import Test from "../../models/Test.model.js";
 
 import { generateInapvPdfBuffer } from "../../services/generateInapvPdfBuffer.service.js";
 import { InapvReportData } from "../../reports/inapv/renderInapvReportHtml.js";
-import { recommendCareers } from "../../utils/recommendCareers.js";
-import { CAREERS_MOCK } from "../../data/careersMock.js";
+import { recommendFromDb } from "../../services/recommendFromDb.service.js";
 import { mergeTopAreas } from "../../utils/inapTopAreas.js";
 import {
   FINAL_CONSIDERATIONS,
@@ -18,6 +17,7 @@ import {
   INAPV_GENERAL_EXPLANATION,
   INTEREST_LINKS,
 } from "../../data/inapvInterpretations.js";
+import { getLogoDataUri } from "../../utils/getLogoDataUri.js";
 
 const ParamsSchema = z.object({
   attemptId: z.coerce.number().int().positive(),
@@ -243,10 +243,10 @@ export async function adminGetAttemptReportPdf(
       topAreasByAptitud: result.topAreasByAptitud,
     }).slice(0, 3);
 
-    const careers = recommendCareers({
-      percentByAreaDim: result.percentByAreaDim ?? {},
-      careers: CAREERS_MOCK,
+    const recommendation = await recommendFromDb({
+      percentByAreaDim: (result.percentByAreaDim ?? {}) as any,
       topAreas,
+      userId: attempt.userId,
       mode: "combined",
       limit: 6,
       minPerArea: 2,
@@ -254,6 +254,8 @@ export async function adminGetAttemptReportPdf(
 
     const period = (attempt as any).period;
     const test = period?.test;
+
+    const logoDataUri = await getLogoDataUri();
 
     const reportData: InapvReportData = {
       student: {
@@ -292,16 +294,21 @@ export async function adminGetAttemptReportPdf(
         byArea,
       },
 
-      careers: careers.map((c) => ({
-        id: Number(String(c.id).replace(/\D/g, "")) || 0,
-        name: c.name,
-        areaKey: c.areaKey,
-        score: c.score,
-      })),
+      careers: recommendation.hasPreferences
+        ? recommendation.data.map((c) => ({
+            id: c.careerId,
+            name: c.name,
+            areaKey: c.areaKey as any,
+            score: c.score,
+            institutionName: c.institutionName,
+            locationName: c.locationName,
+          }))
+        : [],
+      hasPreferences: recommendation.hasPreferences,
 
       links: INTEREST_LINKS,
       finalConsiderations: finalConsiderationsPlain,
-      logoDataUri: null,
+      logoDataUri,
     };
 
     const pdf = await generateInapvPdfBuffer(reportData);

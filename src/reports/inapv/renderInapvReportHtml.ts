@@ -1,6 +1,5 @@
 import { INAPV_AREA_COLORS, INAPV_AREAS } from "../../data/inapv.data.js";
 import { escapeHtml } from "../../utils/scapeHtml.js";
-import { mergeTopAreas } from "../../utils/inapTopAreas.js";
 import { PREMIUM_BASE_STYLES } from "../shared/premiumStyles.js";
 
 type AreaKey =
@@ -62,7 +61,11 @@ export type InapvReportData = {
     areaKey: AreaKey;
     score: number;
     level?: "universitario" | "tecnico";
+    institutionName?: string;
+    locationName?: string;
   }>;
+
+  hasPreferences?: boolean;
 
   links: Array<{
     label: string;
@@ -403,6 +406,12 @@ const REPORT_CSS = `
   flex-wrap: wrap;
 }
 
+.careerInstitution {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
 .tag {
   color: #fff;
   font-weight: 900;
@@ -481,42 +490,48 @@ const REPORT_CSS = `
 `;
 
 export function renderInapvReportHtml(data: InapvReportData) {
-  const topAreas = mergeTopAreas({
-    topAreasByInteres: data.result.topAreasByInteres,
-    topAreasByAptitud: data.result.topAreasByAptitud,
-  }).slice(0, 3);
+  const renderTopCardsHtml = (areas: AreaKey[], dim: "interes" | "aptitud") =>
+    areas
+      .slice(0, 3)
+      .map((k) => {
+        const pct = data.result.percentByAreaDim?.[k] ?? {
+          interes: 0,
+          aptitud: 0,
+          total: 0,
+        };
+        const interp = data.interpretations.byArea?.[k] ?? {
+          interes: "-",
+          aptitud: "-",
+        };
+        const dimTitle = dim === "interes" ? "Interés" : "Aptitud";
+        const dimPct = dim === "interes" ? pct.interes : pct.aptitud;
+        const dimText = dim === "interes" ? interp.interes : interp.aptitud;
 
-  const topCardsHtml = topAreas
-    .map((k) => {
-      const pct = data.result.percentByAreaDim?.[k] ?? {
-        interes: 0,
-        aptitud: 0,
-        total: 0,
-      };
-      const interp = data.interpretations.byArea?.[k] ?? {
-        interes: "—",
-        aptitud: "—",
-      };
-
-      return `
+        return `
         <div class="card avoidBreak">
           <div class="cardTitleContainer">
             <div class="cardTitle">${escapeHtml(areaName(k))}</div>
           </div>
           <div class="pills">
-            <div class="pill">Interés: <b>${escapeHtml(fmtPct(pct.interes))}</b></div>
-            <div class="pill">Aptitud: <b>${escapeHtml(fmtPct(pct.aptitud))}</b></div>
+            <div class="pill">${dimTitle}: <b>${escapeHtml(fmtPct(dimPct))}</b></div>
           </div>
 
-          <div class="subhead">Interés</div>
-          <div class="text">${escapeHtml(interp.interes)}</div>
-
-          <div class="subhead">Aptitud</div>
-          <div class="text">${escapeHtml(interp.aptitud)}</div>
+          <div class="subhead">${dimTitle}</div>
+          <div class="text">${escapeHtml(dimText)}</div>
         </div>
       `;
-    })
-    .join("");
+      })
+      .join("");
+
+  const topInteresCardsHtml = renderTopCardsHtml(
+    data.result.topAreasByInteres ?? [],
+    "interes",
+  );
+
+  const topAptitudCardsHtml = renderTopCardsHtml(
+    data.result.topAreasByAptitud ?? [],
+    "aptitud",
+  );
 
   const careersHtml = (data.careers ?? [])
     .map((c) => {
@@ -538,13 +553,13 @@ export function renderInapvReportHtml(data: InapvReportData) {
           <div class="careerMeta">
             <span class="tag" style="background:${color};">${escapeHtml(String(c.areaKey).toUpperCase())}</span>
             <span class="muted">${escapeHtml(areaName(c.areaKey))}</span>
-            ${
-              levelLabel
-                ? `<span class="badge" style="padding:2px 8px; font-size:11px;">${escapeHtml(levelLabel)}</span>`
-                : ""
-            }
-          </div>
 
+          </div>
+          ${
+            c.institutionName
+              ? `<div class="careerInstitution">${escapeHtml(c.institutionName)}${c.locationName ? " — " + escapeHtml(c.locationName) : ""}</div>`
+              : ""
+          }
           <div class="careerWhy">
             Sugerida por afinidad con tus resultados en <b>${escapeHtml(areaName(c.areaKey))}</b>.
           </div>
@@ -565,13 +580,17 @@ export function renderInapvReportHtml(data: InapvReportData) {
     )
     .join("");
 
-  const interestRows = Object.entries(data.result.percentByAreaDim ?? {})
-    .map(([key, v]) => ({ key, value: Number(v?.interes ?? 0) }))
-    .sort((a, b) => b.value - a.value);
+  const interestRows = Object.entries(data.result.percentByAreaDim ?? {}).map(
+    ([key, v]) => ({ key, value: Number(v?.interes ?? 0) }),
+  );
 
-  const aptitudeRows = Object.entries(data.result.percentByAreaDim ?? {})
-    .map(([key, v]) => ({ key, value: Number(v?.aptitud ?? 0) }))
-    .sort((a, b) => b.value - a.value);
+  // .sort((a, b) => b.value - a.value);
+
+  const aptitudeRows = Object.entries(data.result.percentByAreaDim ?? {}).map(
+    ([key, v]) => ({ key, value: Number(v?.aptitud ?? 0) }),
+  );
+
+  // .sort((a, b) => b.value - a.value);
 
   return `<!doctype html>
 <html lang="es">
@@ -623,15 +642,26 @@ ${REPORT_CSS}
           <div class="note">${escapeHtml(data.interpretations.combined)}</div>
         </div>
       </div>
-
-
+    </section>
+    
+    <section class="pageSection pageBreak">
       <div class="avoidBreak">
         <div class="group">
           <div class="h2">Áreas destacadas (Top 3)</div>
-          <div class="small muted">Interpretación de tus áreas más altas.</div>
+          <div class="small muted">Interpretación separada para interés y aptitud.</div>
 
-          <div class="cards" style="margin-top:10px;">
-            ${topCardsHtml || `<div class="small muted">—</div>`}
+          <div style="margin-top:10px;">
+            <div class="subhead" style="margin-top:0;">Top 3 por Interés</div>
+            <div class="cards" style="margin-top:10px;">
+              ${topInteresCardsHtml || `<div class="small muted">—</div>`}
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div class="subhead" style="margin-top:0;">Top 3 por Aptitud</div>
+            <div class="cards" style="margin-top:10px;">
+              ${topAptitudCardsHtml || `<div class="small muted">—</div>`}
+            </div>
           </div>
         </div>
       </div>
@@ -663,7 +693,11 @@ ${REPORT_CSS}
           <div class="small muted">Sugeridas a partir de tus áreas con mayor afinidad.</div>
 
           <div class="careersGrid">
-            ${careersHtml || `<div class="small muted">—</div>`}
+            ${
+              data.hasPreferences === false
+                ? `<div class="small muted" style="padding:12px 0;">Para recibir sugerencias de carreras personalizadas, indica tus universidades o instituciones de interés en tu perfil del Portal Vocacional.</div>`
+                : careersHtml || `<div class="small muted">—</div>`
+            }
           </div>
         </div>
       </div>

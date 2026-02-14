@@ -8,6 +8,7 @@ import resultsRouter from "./student.results.routes.js";
 import profileRouter from "./student.profile.routes.js";
 import paesScoresRouter from "./student.paesScores.router.js";
 import favoriteOffersRouter from "./student.favoriteOffers.router.js";
+import preferredInstitutionsRouter from "./student.preferredInstitutions.router.js";
 
 const router = Router();
 
@@ -26,5 +27,7 @@ router.use("/profile", profileRouter);
 router.use("/paes-scores", paesScoresRouter);
 
 router.use("/favorites", favoriteOffersRouter);
+
+router.use("/preferred-institutions", preferredInstitutionsRouter);
 
 export default router;

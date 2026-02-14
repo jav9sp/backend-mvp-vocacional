@@ -22,6 +22,7 @@ import {
   SaveCaasOpenAnswersBodySchema,
 } from "../../validators/caasAttempts.schemas.js";
 import type { CaasReportData } from "../../reports/caas/renderCaasReportHtml.js";
+import { getLogoDataUri } from "../../utils/getLogoDataUri.js";
 
 function toFiniteNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -395,6 +396,8 @@ export async function getCaasAttemptPdf(req: Request, res: Response) {
     ]),
   );
 
+  const logoDataUri = await getLogoDataUri();
+
   const reportData: CaasReportData = {
     student: {
       name: user!.name,
@@ -423,7 +426,7 @@ export async function getCaasAttemptPdf(req: Request, res: Response) {
       recommendations: interpretation.recommendations,
     },
     dimensionDescriptions: dimensionDescriptions as any,
-    logoDataUri: null, // Agregar logo si está disponible
+    logoDataUri,
   };
 
   const pdfBuffer = await generateCaasPdfBuffer(reportData);

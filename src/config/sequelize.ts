@@ -21,6 +21,7 @@ import CaasQuestion from "../models/CaasQuestion.model.js";
 import CaasAnswer from "../models/CaasAnswer.model.js";
 import CaasOpenAnswer from "../models/CaasOpenAnswer.model.js";
 import CaasResult from "../models/CaasResult.model.js";
+import StudentPreferredInstitution from "../models/StudentPreferredInstitution.model.js";
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ export const sequelize = new Sequelize(databaseUrl, {
     CaasAnswer,
     CaasOpenAnswer,
     CaasResult,
+    StudentPreferredInstitution,
   ],
 });
 

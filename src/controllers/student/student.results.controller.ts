@@ -19,6 +19,8 @@ import {
   INTEREST_LINKS,
 } from "../../data/inapvInterpretations.js";
 import { CAREERS_MOCK } from "../../data/careersMock.js";
+import { recommendFromDb } from "../../services/recommendFromDb.service.js";
+import { getLogoDataUri } from "../../utils/getLogoDataUri.js";
 
 function toFiniteNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -496,10 +498,10 @@ export async function getResultPdf(
       topAreasByAptitud: result.topAreasByAptitud,
     }).slice(0, 3);
 
-    const careers = recommendCareers({
+    const recommendation = await recommendFromDb({
       percentByAreaDim: (result.percentByAreaDim ?? {}) as any,
-      careers: CAREERS_MOCK,
       topAreas,
+      userId,
       mode: "combined",
       limit: 6,
       minPerArea: 2,
@@ -508,6 +510,8 @@ export async function getResultPdf(
     const attempt = (result as any).attempt;
     const period = attempt.period;
     const test = period.test;
+
+    const logoDataUri = await getLogoDataUri();
 
     const reportData: InapvReportData = {
       student: {
@@ -546,16 +550,21 @@ export async function getResultPdf(
         byArea,
       },
 
-      careers: careers.map((c) => ({
-        id: Number(String(c.id).replace(/\D/g, "")) || 0,
-        name: c.name,
-        areaKey: c.areaKey,
-        score: c.score,
-      })),
+      careers: recommendation.hasPreferences
+        ? recommendation.data.map((c) => ({
+            id: c.careerId,
+            name: c.name,
+            areaKey: c.areaKey as any,
+            score: c.score,
+            institutionName: c.institutionName,
+            locationName: c.locationName,
+          }))
+        : [],
+      hasPreferences: recommendation.hasPreferences,
 
       links: INTEREST_LINKS,
       finalConsiderations: finalConsiderationsPlain,
-      logoDataUri: null,
+      logoDataUri: logoDataUri,
     };
 
     const pdf = await generateInapvPdfBuffer(reportData);
@@ -569,5 +578,76 @@ export async function getResultPdf(
     return res.send(pdf);
   } catch (err) {
     return next(err);
+  }
+}
+
+const RecommendationsQuerySchema = z.object({
+  mode: z.enum(["interes", "aptitud", "combined"]).default("combined"),
+  limit: z.coerce.number().int().min(1).max(30).default(9),
+});
+
+export async function getRecommendations(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const parsed = ParamsSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: "Invalid resultsId" });
+    }
+
+    const { resultsId } = parsed.data;
+    const userId = req.auth!.userId;
+
+    const parsedQuery = RecommendationsQuerySchema.safeParse(req.query);
+    const { mode, limit } = parsedQuery.success
+      ? parsedQuery.data
+      : { mode: "combined" as const, limit: 9 };
+
+    // Cargar resultado INAP con verificación de ownership
+    const result = await InapResult.findOne({
+      where: { id: resultsId },
+      attributes: [
+        "id",
+        "topAreasByInteres",
+        "topAreasByAptitud",
+        "percentByAreaDim",
+      ],
+      include: [
+        {
+          model: Attempt,
+          as: "attempt",
+          required: true,
+          attributes: ["id", "userId", "status"],
+          where: { userId, status: "finished" },
+        },
+      ],
+    });
+
+    if (!result) {
+      return res.status(404).json({ ok: false, error: "Result not found" });
+    }
+
+    const topAreas = mergeTopAreas({
+      topAreasByInteres: result.topAreasByInteres,
+      topAreasByAptitud: result.topAreasByAptitud,
+    }).slice(0, 3);
+
+    const recommendation = await recommendFromDb({
+      percentByAreaDim: (result.percentByAreaDim ?? {}) as any,
+      topAreas,
+      userId,
+      mode,
+      limit,
+    });
+
+    return res.json({
+      ok: true,
+      data: recommendation.data,
+      hasPreferences: recommendation.hasPreferences,
+    });
+  } catch (error) {
+    return next(error);
   }
 }

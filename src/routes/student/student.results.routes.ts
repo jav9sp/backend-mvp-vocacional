@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getResultDetails,
   getResultPdf,
+  getRecommendations,
   listStudentResults,
 } from "../../controllers/student/student.results.controller.js";
 
@@ -37,5 +38,7 @@ router.get("/", listStudentResults);
 router.get("/:resultsId/details", getResultDetails);
 
 router.get("/:resultsId/pdf", getResultPdf);
+
+router.get("/:resultsId/recommendations", getRecommendations);
 
 export default router;

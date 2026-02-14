@@ -4,6 +4,7 @@ import { adminGetPeriodResultsData } from "../../services/adminGetPeriodResultsD
 import { generateInapvPeriodPdfBuffer } from "../../services/generateInapvPeriodPdfBuffer.service.js";
 import { generateCaasPeriodPdfBuffer } from "../../services/generateCaasPeriodPdfBuffer.service.js";
 import { safeFileName } from "../../utils/safeFileName.js";
+import { getLogoDataUri } from "../../utils/getLogoDataUri.js";
 
 function normalizeTestKey(value?: string | null) {
   const key = String(value ?? "")
@@ -109,6 +110,8 @@ export async function adminGetPeriodResultsPdf(
       testId: period.testId,
     };
 
+    const logoDataUri = await getLogoDataUri();
+
     const generatedAt = new Date();
     const pdf =
       data.resultType === "caas"
@@ -122,7 +125,7 @@ export async function adminGetPeriodResultsPdf(
             period: periodPayload,
             data,
             generatedAt,
-            logoDataUri: null,
+            logoDataUri,
           });
 
     const filename = `reporte-periodo-${safeFileName(period.name ?? `periodo-${periodId}`)}-${data.resultType}.pdf`;
